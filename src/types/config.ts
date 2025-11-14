@@ -11,13 +11,11 @@ export interface PluginConfig {
 export interface TargetRunnerConfig {
   startCommand?: string;
   baseUrl?: string;
-  [key: string]: any;
 }
 
 export interface EvaluatorConfig {
   autoPassThreshold?: number;
   autoFailThreshold?: number;
-  [key: string]: any;
 }
 
 export interface Config {
@@ -27,7 +25,6 @@ export interface Config {
   plugins: PluginConfig;
   targetRunner: TargetRunnerConfig;
   evaluator: EvaluatorConfig;
-  [key: string]: any;
 }
 
 export const DEFAULT_CONFIG: Partial<Config> = {
