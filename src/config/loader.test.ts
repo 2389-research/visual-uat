@@ -64,4 +64,148 @@ module.exports = {
   it('should throw error if config file not found', async () => {
     await expect(loadConfig('/nonexistent')).rejects.toThrow();
   });
+
+  describe('Config Validation', () => {
+    it('should throw error if plugins are missing', async () => {
+      const testDir = path.join(__dirname, '../../test-fixtures-no-plugins');
+      if (fs.existsSync(testDir)) {
+        fs.rmSync(testDir, { recursive: true, force: true });
+      }
+      fs.mkdirSync(testDir, { recursive: true });
+
+      const configWithoutPlugins = `
+module.exports = {
+  baseBranch: 'main',
+  specsDir: './tests',
+  generatedDir: './tests/generated'
+};
+      `;
+      fs.writeFileSync(path.join(testDir, 'visual-uat.config.js'), configWithoutPlugins);
+
+      await expect(loadConfig(testDir)).rejects.toThrow('plugin');
+
+      // Cleanup
+      fs.rmSync(testDir, { recursive: true, force: true });
+    });
+
+    it('should throw error if required plugin types are missing', async () => {
+      const testDir = path.join(__dirname, '../../test-fixtures-incomplete-plugins');
+      if (fs.existsSync(testDir)) {
+        fs.rmSync(testDir, { recursive: true, force: true });
+      }
+      fs.mkdirSync(testDir, { recursive: true });
+
+      const configWithIncompletePlugins = `
+module.exports = {
+  baseBranch: 'main',
+  specsDir: './tests',
+  generatedDir: './tests/generated',
+  plugins: {
+    targetRunner: '@test/runner'
+    // Missing testGenerator, differ, evaluator
+  }
+};
+      `;
+      fs.writeFileSync(path.join(testDir, 'visual-uat.config.js'), configWithIncompletePlugins);
+
+      await expect(loadConfig(testDir)).rejects.toThrow('plugin');
+
+      // Cleanup
+      fs.rmSync(testDir, { recursive: true, force: true });
+    });
+
+    it('should throw error if autoPassThreshold is not between 0 and 1', async () => {
+      const testDir = path.join(__dirname, '../../test-fixtures-invalid-pass-threshold');
+      if (fs.existsSync(testDir)) {
+        fs.rmSync(testDir, { recursive: true, force: true });
+      }
+      fs.mkdirSync(testDir, { recursive: true });
+
+      const configWithInvalidThreshold = `
+module.exports = {
+  baseBranch: 'main',
+  specsDir: './tests',
+  generatedDir: './tests/generated',
+  plugins: {
+    targetRunner: '@test/runner',
+    testGenerator: '@test/generator',
+    differ: '@test/differ',
+    evaluator: '@test/evaluator'
+  },
+  evaluator: {
+    autoPassThreshold: 1.5
+  }
+};
+      `;
+      fs.writeFileSync(path.join(testDir, 'visual-uat.config.js'), configWithInvalidThreshold);
+
+      await expect(loadConfig(testDir)).rejects.toThrow('autoPassThreshold');
+
+      // Cleanup
+      fs.rmSync(testDir, { recursive: true, force: true });
+    });
+
+    it('should throw error if autoFailThreshold is not between 0 and 1', async () => {
+      const testDir = path.join(__dirname, '../../test-fixtures-invalid-fail-threshold');
+      if (fs.existsSync(testDir)) {
+        fs.rmSync(testDir, { recursive: true, force: true });
+      }
+      fs.mkdirSync(testDir, { recursive: true });
+
+      const configWithInvalidThreshold = `
+module.exports = {
+  baseBranch: 'main',
+  specsDir: './tests',
+  generatedDir: './tests/generated',
+  plugins: {
+    targetRunner: '@test/runner',
+    testGenerator: '@test/generator',
+    differ: '@test/differ',
+    evaluator: '@test/evaluator'
+  },
+  evaluator: {
+    autoFailThreshold: -0.1
+  }
+};
+      `;
+      fs.writeFileSync(path.join(testDir, 'visual-uat.config.js'), configWithInvalidThreshold);
+
+      await expect(loadConfig(testDir)).rejects.toThrow('autoFailThreshold');
+
+      // Cleanup
+      fs.rmSync(testDir, { recursive: true, force: true });
+    });
+
+    it('should throw error if autoPassThreshold is not greater than autoFailThreshold', async () => {
+      const testDir = path.join(__dirname, '../../test-fixtures-invalid-threshold-relationship');
+      if (fs.existsSync(testDir)) {
+        fs.rmSync(testDir, { recursive: true, force: true });
+      }
+      fs.mkdirSync(testDir, { recursive: true });
+
+      const configWithInvalidRelationship = `
+module.exports = {
+  baseBranch: 'main',
+  specsDir: './tests',
+  generatedDir: './tests/generated',
+  plugins: {
+    targetRunner: '@test/runner',
+    testGenerator: '@test/generator',
+    differ: '@test/differ',
+    evaluator: '@test/evaluator'
+  },
+  evaluator: {
+    autoPassThreshold: 0.3,
+    autoFailThreshold: 0.9
+  }
+};
+      `;
+      fs.writeFileSync(path.join(testDir, 'visual-uat.config.js'), configWithInvalidRelationship);
+
+      await expect(loadConfig(testDir)).rejects.toThrow('autoPassThreshold must be greater than autoFailThreshold');
+
+      // Cleanup
+      fs.rmSync(testDir, { recursive: true, force: true });
+    });
+  });
 });
