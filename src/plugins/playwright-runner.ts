@@ -35,8 +35,52 @@ export class PlaywrightRunner implements TargetRunner {
 
       this.processes.set(branch, child);
 
+      // Track if process fails immediately
+      let spawnError: Error | null = null;
+      const errorHandler = (error: Error) => {
+        spawnError = error;
+      };
+      child.on('error', errorHandler);
+
+      // Also track if process exits immediately
+      let exitedEarly = false;
+      const exitHandler = (code: number) => {
+        if (!spawnError) {
+          spawnError = new Error(`Process exited with code ${code} before server was ready`);
+        }
+        exitedEarly = true;
+      };
+      child.on('exit', exitHandler);
+
       // Wait for server to be ready
-      await this.waitForServer(baseUrl);
+      try {
+        await this.waitForServer(baseUrl);
+
+        // Check if process failed during startup
+        if (spawnError) {
+          throw spawnError;
+        }
+      } catch (error) {
+        // Clean up process if waitForServer fails
+        child.removeListener('error', errorHandler);
+        child.removeListener('exit', exitHandler);
+
+        if (!exitedEarly && child.pid) {
+          try {
+            process.kill(child.pid, 'SIGKILL');
+          } catch {
+            // Process may have already exited
+          }
+        }
+
+        this.processes.delete(branch);
+        this.portAllocations.delete(branch);
+        throw error;
+      }
+
+      // Remove temporary listeners after successful start
+      child.removeListener('error', errorHandler);
+      child.removeListener('exit', exitHandler);
     }
 
     return {
@@ -53,10 +97,46 @@ export class PlaywrightRunner implements TargetRunner {
 
   async stop(targetInfo: TargetInfo): Promise<void> {
     const branch = targetInfo.environment.BRANCH;
-    const process = this.processes.get(branch);
+    const childProcess = this.processes.get(branch);
 
-    if (process) {
-      process.kill('SIGTERM');
+    if (childProcess && childProcess.pid) {
+      // Try graceful shutdown with SIGTERM
+      try {
+        process.kill(childProcess.pid, 'SIGTERM');
+      } catch (error) {
+        // Process may have already exited
+        this.processes.delete(branch);
+        this.portAllocations.delete(branch);
+        return;
+      }
+
+      // Wait up to 5 seconds for graceful exit
+      const timeout = 5000;
+      const start = Date.now();
+      let exited = false;
+
+      const exitPromise = new Promise<void>((resolve) => {
+        childProcess.on('exit', () => {
+          exited = true;
+          resolve();
+        });
+      });
+
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(resolve, timeout);
+      });
+
+      await Promise.race([exitPromise, timeoutPromise]);
+
+      // If process didn't exit gracefully, force kill
+      if (!exited && childProcess.pid) {
+        try {
+          process.kill(childProcess.pid, 'SIGKILL');
+        } catch {
+          // Process may have exited between check and kill
+        }
+      }
+
       this.processes.delete(branch);
     }
 
