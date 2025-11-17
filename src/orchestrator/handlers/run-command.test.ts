@@ -93,14 +93,22 @@ describe('RunCommandHandler - Generation Phase', () => {
     const mockWriteFileSync = fs.writeFileSync as jest.MockedFunction<typeof fs.writeFileSync>;
     const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
     const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockStatSync = fs.statSync as jest.MockedFunction<typeof fs.statSync>;
 
     // Mock for SpecManifest constructor - it tries to read manifest.json
     mockExistsSync.mockReturnValue(false);
     mockMkdirSync.mockReturnValue(undefined);
 
     mockReaddirSync.mockReturnValue(['test1.md', 'test2.md'] as any);
-    mockReadFileSync.mockReturnValue('Test content');
+    // Smart mock: return JSON for manifest.json, 'Test content' for spec files
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
     mockWriteFileSync.mockReturnValue(undefined);
+    mockStatSync.mockReturnValue({ mtimeMs: 123456789 } as any);
 
     mockPlugins.testGenerator.generate = jest.fn().mockResolvedValue({
       code: 'test code',
@@ -126,14 +134,22 @@ describe('RunCommandHandler - Generation Phase', () => {
     const mockWriteFileSync = fs.writeFileSync as jest.MockedFunction<typeof fs.writeFileSync>;
     const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
     const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockStatSync = fs.statSync as jest.MockedFunction<typeof fs.statSync>;
 
     // Mock for SpecManifest constructor - it tries to read manifest.json
     mockExistsSync.mockReturnValue(false);
     mockMkdirSync.mockReturnValue(undefined);
 
     mockReaddirSync.mockReturnValue(['test1.md', 'test2.md'] as any);
-    mockReadFileSync.mockReturnValue('Test content');
+    // Smart mock: return JSON for manifest.json, 'Test content' for spec files
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
     mockWriteFileSync.mockReturnValue(undefined);
+    mockStatSync.mockReturnValue({ mtimeMs: 123456789 } as any);
 
     mockPlugins.testGenerator.generate = jest.fn()
       .mockRejectedValueOnce(new Error('LLM timeout'))
@@ -160,13 +176,21 @@ describe('RunCommandHandler - Generation Phase', () => {
     const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
     const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
     const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockStatSync = fs.statSync as jest.MockedFunction<typeof fs.statSync>;
 
     // Mock for SpecManifest constructor - it tries to read manifest.json
     mockExistsSync.mockReturnValue(false);
     mockMkdirSync.mockReturnValue(undefined);
 
     mockReaddirSync.mockReturnValue(['test1.md', 'test2.md'] as any);
-    mockReadFileSync.mockReturnValue('Test content');
+    // Smart mock: return JSON for manifest.json, 'Test content' for spec files
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+    mockStatSync.mockReturnValue({ mtimeMs: 123456789 } as any);
 
     mockPlugins.testGenerator.generate = jest.fn()
       .mockRejectedValueOnce(new Error('LLM timeout'));

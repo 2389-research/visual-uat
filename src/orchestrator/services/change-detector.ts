@@ -76,7 +76,12 @@ export class ChangeDetector {
   private findSpecFiles(): string[] {
     const files = readdirSync(this.config.specsDir);
     return files
-      .filter(f => f.endsWith('.md') && !f.toUpperCase().startsWith('README'))
+      .filter(f => {
+        if (!f.endsWith('.md')) return false;
+        // Only exclude files where basename (without extension) is exactly "README"
+        const basename = path.basename(f, '.md');
+        return basename.toUpperCase() !== 'README';
+      })
       .map(f => path.join(this.config.specsDir, f));
   }
 }

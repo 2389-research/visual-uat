@@ -369,18 +369,28 @@ export class ChangeDetector {
     try {
       execSync(
         `git diff --quiet ${baseBranch}..HEAD -- src/`,
-        { cwd: this.projectRoot }
+        { cwd: this.projectRoot, stdio: 'pipe' }
       );
       return false; // No differences (exit code 0)
-    } catch (error) {
-      return true; // Differences exist (non-zero exit code)
+    } catch (error: any) {
+      // Exit code 1 means differences exist, which is expected
+      if (error.status === 1) {
+        return true;
+      }
+      // Any other error should be thrown
+      throw error;
     }
   }
 
   private findSpecFiles(): string[] {
     const files = readdirSync(this.config.specsDir);
     return files
-      .filter(f => f.endsWith('.md'))
+      .filter(f => {
+        if (!f.endsWith('.md')) return false;
+        // Only exclude files where basename (without extension) is exactly "README"
+        const basename = path.basename(f, '.md');
+        return basename.toUpperCase() !== 'README';
+      })
       .map(f => path.join(this.config.specsDir, f));
   }
 }
@@ -959,7 +969,7 @@ Expected: FAIL with "Cannot find module './worktree-manager'"
 // ABOUTME: Manages git worktrees for isolated branch testing, creating and cleaning up worktrees.
 // ABOUTME: Handles dependency installation (npm install) in each worktree.
 
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -975,24 +985,32 @@ export class WorktreeManager {
     const basePath = path.join(this.projectRoot, '.worktrees/base');
     const currentPath = path.join(this.projectRoot, '.worktrees/current');
 
-    // Create worktrees
-    execSync(`git worktree add .worktrees/base ${baseBranch}`, {
+    // Create worktrees - using spawnSync with array args prevents shell injection
+    const baseResult = spawnSync('git', ['worktree', 'add', '.worktrees/base', baseBranch], {
       cwd: this.projectRoot,
       stdio: 'inherit'
     });
 
-    execSync(`git worktree add .worktrees/current ${currentBranch}`, {
+    if (baseResult.error || baseResult.status !== 0) {
+      throw new Error(`Failed to create base worktree: ${baseResult.error?.message || 'git command failed'}`);
+    }
+
+    const currentResult = spawnSync('git', ['worktree', 'add', '.worktrees/current', currentBranch], {
       cwd: this.projectRoot,
       stdio: 'inherit'
     });
+
+    if (currentResult.error || currentResult.status !== 0) {
+      throw new Error(`Failed to create current worktree: ${currentResult.error?.message || 'git command failed'}`);
+    }
 
     // Install dependencies if package.json exists
     if (fs.existsSync(path.join(basePath, 'package.json'))) {
-      execSync('npm install', { cwd: basePath, stdio: 'inherit' });
+      spawnSync('npm', ['install'], { cwd: basePath, stdio: 'inherit' });
     }
 
     if (fs.existsSync(path.join(currentPath, 'package.json'))) {
-      execSync('npm install', { cwd: currentPath, stdio: 'inherit' });
+      spawnSync('npm', ['install'], { cwd: currentPath, stdio: 'inherit' });
     }
 
     return {
@@ -1002,26 +1020,28 @@ export class WorktreeManager {
   }
 
   async cleanup(): Promise<void> {
-    try {
-      execSync('git worktree remove .worktrees/base', {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
-    } catch (error) {
+    // Try to remove base worktree, force if it fails
+    const baseResult = spawnSync('git', ['worktree', 'remove', '.worktrees/base'], {
+      cwd: this.projectRoot,
+      stdio: 'inherit'
+    });
+
+    if (baseResult.status !== 0) {
       // Force remove if locked
-      execSync('git worktree remove --force .worktrees/base', {
+      spawnSync('git', ['worktree', 'remove', '--force', '.worktrees/base'], {
         cwd: this.projectRoot,
         stdio: 'inherit'
       });
     }
 
-    try {
-      execSync('git worktree remove .worktrees/current', {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
-    } catch (error) {
-      execSync('git worktree remove --force .worktrees/current', {
+    // Try to remove current worktree, force if it fails
+    const currentResult = spawnSync('git', ['worktree', 'remove', '.worktrees/current'], {
+      cwd: this.projectRoot,
+      stdio: 'inherit'
+    });
+
+    if (currentResult.status !== 0) {
+      spawnSync('git', ['worktree', 'remove', '--force', '.worktrees/current'], {
         cwd: this.projectRoot,
         stdio: 'inherit'
       });
@@ -1537,8 +1557,7 @@ export class RunCommandHandler {
     private plugins: LoadedPlugins,
     private projectRoot: string
   ) {
-    const manifestPath = path.join(projectRoot, '.visual-uat/manifest.json');
-    const manifest = new SpecManifest(manifestPath);
+    const manifest = new SpecManifest(projectRoot);
     this.changeDetector = new ChangeDetector(config, manifest, projectRoot);
   }
 
@@ -1661,6 +1680,7 @@ export class RunCommandHandler {
   ): Promise<GenerationResult> {
     const specsToGenerate = this.changeDetector.getSpecsToGenerate(scope);
     const results: GenerationResult = { success: [], failed: [] };
+    const manifest = new SpecManifest(this.projectRoot);
 
     // Ensure generated directory exists
     if (!fs.existsSync(this.config.generatedDir)) {
@@ -1669,7 +1689,8 @@ export class RunCommandHandler {
 
     for (const specPath of specsToGenerate) {
       try {
-        await this.generateSingleTest(specPath);
+        const generatedPath = await this.generateSingleTest(specPath);
+        manifest.updateSpec(specPath, generatedPath);
         results.success.push(specPath);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1681,10 +1702,11 @@ export class RunCommandHandler {
       }
     }
 
+    manifest.save();
     return results;
   }
 
-  private async generateSingleTest(specPath: string): Promise<void> {
+  private async generateSingleTest(specPath: string): Promise<string> {
     const content = fs.readFileSync(specPath, 'utf-8');
     const spec: TestSpec = {
       path: specPath,
@@ -1703,6 +1725,7 @@ export class RunCommandHandler {
     const outputPath = path.join(this.config.generatedDir, `${baseName}.spec.ts`);
 
     fs.writeFileSync(outputPath, generated.code);
+    return outputPath;
   }
 }
 ```

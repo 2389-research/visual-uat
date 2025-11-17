@@ -36,6 +36,7 @@ export class RunCommandHandler {
   ): Promise<GenerationResult> {
     const specsToGenerate = this.changeDetector.getSpecsToGenerate(scope);
     const results: GenerationResult = { success: [], failed: [] };
+    const manifest = new SpecManifest(this.projectRoot);
 
     // Ensure generated directory exists
     if (!fs.existsSync(this.config.generatedDir)) {
@@ -44,7 +45,8 @@ export class RunCommandHandler {
 
     for (const specPath of specsToGenerate) {
       try {
-        await this.generateSingleTest(specPath);
+        const generatedPath = await this.generateSingleTest(specPath);
+        manifest.updateSpec(specPath, generatedPath);
         results.success.push(specPath);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -56,10 +58,11 @@ export class RunCommandHandler {
       }
     }
 
+    manifest.save();
     return results;
   }
 
-  private async generateSingleTest(specPath: string): Promise<void> {
+  private async generateSingleTest(specPath: string): Promise<string> {
     const content = fs.readFileSync(specPath, 'utf-8');
     const spec: TestSpec = {
       path: specPath,
@@ -78,6 +81,7 @@ export class RunCommandHandler {
     const outputPath = path.join(this.config.generatedDir, `${baseName}.spec.ts`);
 
     fs.writeFileSync(outputPath, generated.code);
+    return outputPath;
   }
 
   async execute(options: RunOptions): Promise<number> {

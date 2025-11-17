@@ -1,7 +1,7 @@
 // ABOUTME: Manages git worktrees for isolated branch testing, creating and cleaning up worktrees.
 // ABOUTME: Handles dependency installation (npm install) in each worktree.
 
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -17,24 +17,32 @@ export class WorktreeManager {
     const basePath = path.join(this.projectRoot, '.worktrees/base');
     const currentPath = path.join(this.projectRoot, '.worktrees/current');
 
-    // Create worktrees
-    execSync(`git worktree add .worktrees/base ${baseBranch}`, {
+    // Create worktrees - using spawnSync with array args prevents shell injection
+    const baseResult = spawnSync('git', ['worktree', 'add', '.worktrees/base', baseBranch], {
       cwd: this.projectRoot,
       stdio: 'inherit'
     });
 
-    execSync(`git worktree add .worktrees/current ${currentBranch}`, {
+    if (baseResult.error || baseResult.status !== 0) {
+      throw new Error(`Failed to create base worktree: ${baseResult.error?.message || 'git command failed'}`);
+    }
+
+    const currentResult = spawnSync('git', ['worktree', 'add', '.worktrees/current', currentBranch], {
       cwd: this.projectRoot,
       stdio: 'inherit'
     });
+
+    if (currentResult.error || currentResult.status !== 0) {
+      throw new Error(`Failed to create current worktree: ${currentResult.error?.message || 'git command failed'}`);
+    }
 
     // Install dependencies if package.json exists
     if (fs.existsSync(path.join(basePath, 'package.json'))) {
-      execSync('npm install', { cwd: basePath, stdio: 'inherit' });
+      spawnSync('npm', ['install'], { cwd: basePath, stdio: 'inherit' });
     }
 
     if (fs.existsSync(path.join(currentPath, 'package.json'))) {
-      execSync('npm install', { cwd: currentPath, stdio: 'inherit' });
+      spawnSync('npm', ['install'], { cwd: currentPath, stdio: 'inherit' });
     }
 
     return {
@@ -44,26 +52,28 @@ export class WorktreeManager {
   }
 
   async cleanup(): Promise<void> {
-    try {
-      execSync('git worktree remove .worktrees/base', {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
-    } catch (error) {
+    // Try to remove base worktree, force if it fails
+    const baseResult = spawnSync('git', ['worktree', 'remove', '.worktrees/base'], {
+      cwd: this.projectRoot,
+      stdio: 'inherit'
+    });
+
+    if (baseResult.status !== 0) {
       // Force remove if locked
-      execSync('git worktree remove --force .worktrees/base', {
+      spawnSync('git', ['worktree', 'remove', '--force', '.worktrees/base'], {
         cwd: this.projectRoot,
         stdio: 'inherit'
       });
     }
 
-    try {
-      execSync('git worktree remove .worktrees/current', {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
-    } catch (error) {
-      execSync('git worktree remove --force .worktrees/current', {
+    // Try to remove current worktree, force if it fails
+    const currentResult = spawnSync('git', ['worktree', 'remove', '.worktrees/current'], {
+      cwd: this.projectRoot,
+      stdio: 'inherit'
+    });
+
+    if (currentResult.status !== 0) {
+      spawnSync('git', ['worktree', 'remove', '--force', '.worktrees/current'], {
         cwd: this.projectRoot,
         stdio: 'inherit'
       });

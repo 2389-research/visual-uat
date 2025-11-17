@@ -114,6 +114,13 @@ describe('ChangeDetector', () => {
       expect(specs).toEqual(['tests/test1.md', 'tests/test2.md']);
     });
 
+    it('should include spec files that start with "readme" but are not README.md', () => {
+      mockReaddirSync.mockReturnValueOnce(['readme-login-test.md', 'README-flows.md', 'README.md'] as any);
+
+      const specs = detector.getSpecsToGenerate('full');
+      expect(specs).toEqual(['tests/readme-login-test.md', 'tests/README-flows.md']);
+    });
+
     it('should return only new/modified specs for incremental run', () => {
       jest.spyOn(manifest, 'detectChanges').mockReturnValue({
         new: ['tests/new.md'],
