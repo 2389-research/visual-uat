@@ -111,10 +111,10 @@ describe('WorktreeManager', () => {
   });
 
   describe('cleanup', () => {
-    it('should remove worktrees', async () => {
+    it('should remove worktrees', () => {
       mockSpawnSync.mockReturnValue({ status: 0, error: undefined } as any);
 
-      await manager.cleanup();
+      manager.cleanup();
 
       expect(mockSpawnSync).toHaveBeenCalledWith(
         'git',
@@ -128,13 +128,13 @@ describe('WorktreeManager', () => {
       );
     });
 
-    it('should force remove if normal removal fails', async () => {
+    it('should force remove if normal removal fails', () => {
       mockSpawnSync
         .mockReturnValueOnce({ status: 1, error: undefined } as any) // First remove fails
         .mockReturnValueOnce({ status: 0, error: undefined } as any) // Force remove succeeds
         .mockReturnValue({ status: 0, error: undefined } as any); // Current worktree removes succeed
 
-      await manager.cleanup();
+      manager.cleanup();
 
       expect(mockSpawnSync).toHaveBeenCalledWith(
         'git',

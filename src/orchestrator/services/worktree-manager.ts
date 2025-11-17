@@ -63,7 +63,7 @@ export class WorktreeManager {
     };
   }
 
-  async cleanup(): Promise<void> {
+  cleanup(): void {
     // Try to remove base worktree, force if it fails
     const baseResult = spawnSync('git', ['worktree', 'remove', '.worktrees/base'], {
       cwd: this.projectRoot,
