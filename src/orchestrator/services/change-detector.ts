@@ -59,18 +59,23 @@ export class ChangeDetector {
     try {
       execSync(
         `git diff --quiet ${baseBranch}..HEAD -- src/`,
-        { cwd: this.projectRoot }
+        { cwd: this.projectRoot, stdio: 'pipe' }
       );
       return false; // No differences (exit code 0)
-    } catch (error) {
-      return true; // Differences exist (non-zero exit code)
+    } catch (error: any) {
+      // Exit code 1 means differences exist, which is expected
+      if (error.status === 1) {
+        return true;
+      }
+      // Any other error should be thrown
+      throw error;
     }
   }
 
   private findSpecFiles(): string[] {
     const files = readdirSync(this.config.specsDir);
     return files
-      .filter(f => f.endsWith('.md'))
+      .filter(f => f.endsWith('.md') && !f.toUpperCase().startsWith('README'))
       .map(f => path.join(this.config.specsDir, f));
   }
 }

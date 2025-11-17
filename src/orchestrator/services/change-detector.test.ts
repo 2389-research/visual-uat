@@ -43,12 +43,24 @@ describe('ChangeDetector', () => {
     });
 
     it('should return "full" when codebase changed', () => {
+      const error: any = new Error('exit code 1');
+      error.status = 1;
       mockExecSync.mockImplementationOnce(() => {
-        throw new Error('exit code 1'); // git diff returns non-zero
+        throw error; // git diff returns exit code 1 (differences exist)
       });
 
       const scope = detector.determineScope({ all: false });
       expect(scope).toBe('full');
+    });
+
+    it('should throw error when git command fails with non-1 exit code', () => {
+      const error: any = new Error('fatal: bad revision');
+      error.status = 128; // git error for invalid branch
+      mockExecSync.mockImplementationOnce(() => {
+        throw error;
+      });
+
+      expect(() => detector.determineScope({ all: false })).toThrow('fatal: bad revision');
     });
 
     it('should return "incremental" when specs changed but not codebase', () => {
@@ -95,11 +107,11 @@ describe('ChangeDetector', () => {
   });
 
   describe('getSpecsToGenerate', () => {
-    it('should return all specs for full run', () => {
-      mockReaddirSync.mockReturnValueOnce(['test1.md', 'test2.md', 'README.md'] as any);
+    it('should return all specs for full run, excluding README files', () => {
+      mockReaddirSync.mockReturnValueOnce(['test1.md', 'test2.md', 'README.md', 'readme.md'] as any);
 
       const specs = detector.getSpecsToGenerate('full');
-      expect(specs).toEqual(['tests/test1.md', 'tests/test2.md', 'tests/README.md']);
+      expect(specs).toEqual(['tests/test1.md', 'tests/test2.md']);
     });
 
     it('should return only new/modified specs for incremental run', () => {
