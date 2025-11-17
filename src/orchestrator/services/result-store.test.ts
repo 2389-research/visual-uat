@@ -128,4 +128,88 @@ describe('ResultStore', () => {
       );
     });
   });
+
+  describe('loadResult', () => {
+    it('should load result by timestamp', async () => {
+      const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+      const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+      mockExistsSync.mockReturnValue(true);
+
+      const expectedResult: RunResult = {
+        timestamp: 1731870123,
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [],
+        summary: { total: 5, passed: 3, failed: 2, errored: 0, needsReview: 0 }
+      };
+
+      mockReadFileSync.mockReturnValue(JSON.stringify(expectedResult));
+
+      const result = await store.loadResult(1731870123);
+
+      expect(mockExistsSync).toHaveBeenCalledWith(
+        expect.stringContaining(path.join('.visual-uat', 'results', 'run-1731870123.json'))
+      );
+      expect(mockReadFileSync).toHaveBeenCalledWith(
+        expect.stringContaining(path.join('.visual-uat', 'results', 'run-1731870123.json')),
+        'utf-8'
+      );
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should return null when loading non-existent result', async () => {
+      const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+
+      mockExistsSync.mockReturnValue(false);
+
+      const result = await store.loadResult(9999999999);
+
+      expect(mockExistsSync).toHaveBeenCalledWith(
+        expect.stringContaining(path.join('.visual-uat', 'results', 'run-9999999999.json'))
+      );
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getScreenshotPath', () => {
+    it('should return correct path for base branch', () => {
+      const screenshotPath = store.getScreenshotPath('base', 'login-test', 'after-login');
+
+      expect(screenshotPath).toContain('.visual-uat');
+      expect(screenshotPath).toContain(path.join('screenshots', 'base'));
+      expect(screenshotPath).toContain('login-test');
+      expect(screenshotPath).toContain('after-login.png');
+      expect(screenshotPath).toBe(
+        path.join(projectRoot, '.visual-uat', 'screenshots', 'base', 'login-test', 'after-login.png')
+      );
+    });
+
+    it('should return correct path for current branch', () => {
+      const screenshotPath = store.getScreenshotPath('current', 'checkout-flow', 'payment');
+
+      expect(screenshotPath).toContain('.visual-uat');
+      expect(screenshotPath).toContain(path.join('screenshots', 'current'));
+      expect(screenshotPath).toContain('checkout-flow');
+      expect(screenshotPath).toContain('payment.png');
+      expect(screenshotPath).toBe(
+        path.join(projectRoot, '.visual-uat', 'screenshots', 'current', 'checkout-flow', 'payment.png')
+      );
+    });
+  });
+
+  describe('getDiffPath', () => {
+    it('should return correct diff path', () => {
+      const diffPath = store.getDiffPath('dashboard-test', 'initial');
+
+      expect(diffPath).toContain('.visual-uat');
+      expect(diffPath).toContain('diffs');
+      expect(diffPath).toContain('dashboard-test');
+      expect(diffPath).toContain('initial.png');
+      expect(diffPath).toBe(
+        path.join(projectRoot, '.visual-uat', 'diffs', 'dashboard-test', 'initial.png')
+      );
+    });
+  });
 });
