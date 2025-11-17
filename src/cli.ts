@@ -4,6 +4,12 @@
 
 import { Command } from 'commander';
 import { version } from './index';
+import { loadConfig } from './config/loader';
+import { PluginRegistry } from './orchestrator/services/plugin-registry';
+import { ResultStore } from './orchestrator/services/result-store';
+import { GenerateCommandHandler } from './orchestrator/handlers/generate-command';
+import { RunCommandHandler } from './orchestrator/handlers/run-command';
+import { ReportCommandHandler } from './orchestrator/handlers/report-command';
 
 export function createCLI(): Command {
   const program = new Command();
@@ -14,35 +20,67 @@ export function createCLI(): Command {
     .version(version);
 
   program
-    .command('run')
-    .description('Generate tests (if needed) and run visual comparison')
-    .option('--all', 'Force run all tests (ignore caching)')
-    .option('--base <branch>', 'Base branch to compare against (default from config)')
-    .action(async (options) => {
-      console.log('Running visual tests...');
-      console.log('Options:', options);
-      // Implementation will be added in orchestrator task
-      throw new Error('Not yet implemented');
+    .command('generate')
+    .description('Generate test scripts from specifications')
+    .action(async () => {
+      try {
+        const projectRoot = process.cwd();
+        const config = await loadConfig(projectRoot);
+        const registry = new PluginRegistry(config);
+        const plugins = registry.loadAll();
+
+        const handler = new GenerateCommandHandler(config, projectRoot);
+        const exitCode = await handler.execute(plugins.testGenerator);
+        process.exit(exitCode);
+      } catch (error) {
+        console.error('Error:', error instanceof Error ? error.message : error);
+        process.exit(2);
+      }
     });
 
   program
-    .command('generate')
-    .description('Force regenerate all test scripts from specs')
-    .action(async () => {
-      console.log('Generating test scripts...');
-      // Implementation will be added in generator task
-      throw new Error('Not yet implemented');
+    .command('run')
+    .description('Run visual acceptance tests')
+    .option('--all', 'Force run all tests (ignore change detection)')
+    .option('--base <branch>', 'Base branch to compare against')
+    .option('--fail-fast', 'Stop on first error')
+    .action(async (options) => {
+      try {
+        const projectRoot = process.cwd();
+        const config = await loadConfig(projectRoot);
+        const registry = new PluginRegistry(config);
+        const plugins = registry.loadAll();
+
+        const handler = new RunCommandHandler(config, plugins, projectRoot);
+        const exitCode = await handler.execute({
+          all: options.all,
+          baseBranch: options.base,
+          failFast: options.failFast
+        });
+        process.exit(exitCode);
+      } catch (error) {
+        console.error('Error:', error instanceof Error ? error.message : error);
+        process.exit(2);
+      }
     });
 
   program
     .command('report')
-    .description('Open HTML report viewer')
-    .option('--latest', 'Open most recent report')
-    .action(async (options) => {
-      console.log('Opening report...');
-      console.log('Options:', options);
-      // Implementation will be added in reporter task
-      throw new Error('Not yet implemented');
+    .description('View test results')
+    .option('--latest', 'Show latest run (default)')
+    .argument('[runId]', 'Specific run ID to view')
+    .action(async (runId, options) => {
+      try {
+        const projectRoot = process.cwd();
+        const resultStore = new ResultStore(projectRoot);
+
+        const handler = new ReportCommandHandler(resultStore);
+        const exitCode = await handler.execute(runId ? parseInt(runId) : undefined);
+        process.exit(exitCode);
+      } catch (error) {
+        console.error('Error:', error instanceof Error ? error.message : error);
+        process.exit(2);
+      }
     });
 
   return program;

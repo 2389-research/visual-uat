@@ -12,6 +12,7 @@ export type ExecutionScope = 'full' | 'incremental' | 'skip';
 export interface RunOptions {
   all?: boolean;
   baseBranch?: string;
+  failFast?: boolean;
 }
 
 export class ChangeDetector {
