@@ -1,0 +1,33 @@
+{
+  "name": "visual-uat",
+  "version": "0.1.0",
+  "description": "Visual acceptance testing with LLM-powered test generation",
+  "main": "dist/index.js",
+  "bin": {
+    "visual-uat": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["testing", "visual", "regression", "playwright"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "playwright": "^1.40.0",
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^7.0.0",
+    "@anthropic-ai/sdk": "^0.69.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/jest": "^29.5.0",
+    "@types/pixelmatch": "^5.2.6",
+    "@types/pngjs": "^6.0.4",
+    "typescript": "^5.3.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0"
+  }
+}

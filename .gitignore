@@ -1,3 +1,4 @@
 .worktrees/
 .visual-uat/
 node_modules/
+dist/
