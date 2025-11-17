@@ -14,15 +14,14 @@ export interface TargetRunner {
 }
 
 export interface TestSpec {
-  filePath: string;
+  path: string;
   content: string;
-  metadata: Record<string, any>;
+  intent: string;
 }
 
 export interface CodebaseContext {
-  fileTree: string[];
-  components: string[];
-  metadata: Record<string, any>;
+  files: string[];
+  structure: string;
 }
 
 export interface GeneratedTest {
