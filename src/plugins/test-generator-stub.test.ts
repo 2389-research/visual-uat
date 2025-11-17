@@ -9,15 +9,14 @@ describe('StubTestGenerator', () => {
 
   it('should generate basic Playwright test', async () => {
     const spec: TestSpec = {
-      filePath: 'test.md',
+      path: 'test.md',
       content: 'Navigate to homepage and verify title',
-      metadata: {}
+      intent: 'Verify homepage loads with correct title'
     };
 
     const context: CodebaseContext = {
-      fileTree: [],
-      components: [],
-      metadata: {}
+      files: [],
+      structure: ''
     };
 
     const result = await generator.generate(spec, context);
@@ -30,15 +29,14 @@ describe('StubTestGenerator', () => {
 
   it('should extract checkpoint names from spec', async () => {
     const spec: TestSpec = {
-      filePath: 'test.md',
+      path: 'test.md',
       content: 'Step 1: Login\nCheckpoint: after-login\nStep 2: View dashboard\nCheckpoint: dashboard-loaded',
-      metadata: {}
+      intent: 'Verify login flow and dashboard loading'
     };
 
     const context: CodebaseContext = {
-      fileTree: [],
-      components: [],
-      metadata: {}
+      files: [],
+      structure: ''
     };
 
     const result = await generator.generate(spec, context);

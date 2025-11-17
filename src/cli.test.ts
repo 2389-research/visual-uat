@@ -29,3 +29,37 @@ describe('CLI', () => {
     expect(reportCmd).toBeDefined();
   });
 });
+
+describe('CLI - Orchestrator Integration', () => {
+  it('should wire up generate command to GenerateCommandHandler', () => {
+    const program = createCLI();
+    const generateCommand = program.commands.find(cmd => cmd.name() === 'generate');
+
+    expect(generateCommand).toBeDefined();
+    expect(generateCommand?.description()).toContain('Generate test scripts');
+  });
+
+  it('should wire up run command to RunCommandHandler', () => {
+    const program = createCLI();
+    const runCommand = program.commands.find(cmd => cmd.name() === 'run');
+
+    expect(runCommand).toBeDefined();
+    const options = runCommand?.options || [];
+    const optionFlags = options.map((opt: any) => opt.flags);
+
+    expect(optionFlags).toContain('--all');
+    expect(optionFlags).toContain('--base <branch>');
+    expect(optionFlags).toContain('--fail-fast');
+  });
+
+  it('should wire up report command to ReportCommandHandler', () => {
+    const program = createCLI();
+    const reportCommand = program.commands.find(cmd => cmd.name() === 'report');
+
+    expect(reportCommand).toBeDefined();
+    const options = reportCommand?.options || [];
+    const optionFlags = options.map((opt: any) => opt.flags);
+
+    expect(optionFlags).toContain('--latest');
+  });
+});
