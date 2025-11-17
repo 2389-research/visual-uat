@@ -47,12 +47,16 @@ describe('GenerateCommandHandler', () => {
         checkpoints: ['checkpoint1']
       });
 
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+
       const handler = new GenerateCommandHandler(config, '/fake/project');
       const exitCode = await handler.execute(mockGenerator);
 
       expect(mockGenerator.generate).toHaveBeenCalledTimes(2);
       expect(mockWriteFileSync).toHaveBeenCalledTimes(2);
       expect(exitCode).toBe(0);
+
+      consoleLogSpy.mockRestore();
     });
 
     it('should log error and continue if generation fails', async () => {
@@ -72,6 +76,7 @@ describe('GenerateCommandHandler', () => {
           checkpoints: ['checkpoint1']
         });
 
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
       const handler = new GenerateCommandHandler(config, '/fake/project');
@@ -83,6 +88,7 @@ describe('GenerateCommandHandler', () => {
       expect(mockGenerator.generate).toHaveBeenCalledTimes(2);
       expect(exitCode).toBe(0);
 
+      consoleLogSpy.mockRestore();
       consoleErrorSpy.mockRestore();
     });
 
@@ -102,6 +108,8 @@ describe('GenerateCommandHandler', () => {
         checkpoints: ['checkpoint1']
       });
 
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+
       const handler = new GenerateCommandHandler(config, '/fake/project');
       await handler.execute(mockGenerator);
 
@@ -109,6 +117,8 @@ describe('GenerateCommandHandler', () => {
         expect.stringContaining('tests/generated'),
         { recursive: true }
       );
+
+      consoleLogSpy.mockRestore();
     });
   });
 });
