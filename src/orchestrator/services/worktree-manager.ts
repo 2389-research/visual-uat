@@ -38,11 +38,23 @@ export class WorktreeManager {
 
     // Install dependencies if package.json exists
     if (fs.existsSync(path.join(basePath, 'package.json'))) {
-      spawnSync('npm', ['install'], { cwd: basePath, stdio: 'inherit' });
+      const baseNpmResult = spawnSync('npm', ['install'], { cwd: basePath, stdio: 'inherit' });
+      if (baseNpmResult.error || baseNpmResult.status !== 0) {
+        throw new Error(
+          `npm install failed in base worktree (${basePath}): ` +
+          `exit code ${baseNpmResult.status}, error: ${baseNpmResult.error?.message || 'none'}`
+        );
+      }
     }
 
     if (fs.existsSync(path.join(currentPath, 'package.json'))) {
-      spawnSync('npm', ['install'], { cwd: currentPath, stdio: 'inherit' });
+      const currentNpmResult = spawnSync('npm', ['install'], { cwd: currentPath, stdio: 'inherit' });
+      if (currentNpmResult.error || currentNpmResult.status !== 0) {
+        throw new Error(
+          `npm install failed in current worktree (${currentPath}): ` +
+          `exit code ${currentNpmResult.status}, error: ${currentNpmResult.error?.message || 'none'}`
+        );
+      }
     }
 
     return {
