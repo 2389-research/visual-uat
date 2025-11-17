@@ -64,6 +64,85 @@ describe('PluginRegistry', () => {
 
       expect(() => registry.loadPlugin('testGenerator')).toThrow('Unknown plugin');
     });
+
+    it('should throw error if plugin missing required method', () => {
+      const BrokenPlugin = class {
+        constructor(config: Config) {}
+        // Missing the 'generate' method
+      };
+
+      config.plugins.testGenerator = '@visual-uat/broken-plugin';
+      const registry = new PluginRegistry(config);
+      registry['builtins']['@visual-uat/broken-plugin'] = BrokenPlugin;
+
+      expect(() => registry.loadPlugin('testGenerator'))
+        .toThrow('does not implement testGenerator.generate()');
+    });
+
+    it('should throw error if testGenerator plugin missing generate method', () => {
+      const BrokenTestGenerator = class {
+        constructor(config: Config) {}
+        // Missing 'generate' method
+      };
+
+      config.plugins.testGenerator = '@visual-uat/broken-test-generator';
+      const registry = new PluginRegistry(config);
+      registry['builtins']['@visual-uat/broken-test-generator'] = BrokenTestGenerator;
+
+      expect(() => registry.loadPlugin('testGenerator'))
+        .toThrow('does not implement testGenerator.generate()');
+    });
+
+    it('should throw error if targetRunner plugin missing required methods', () => {
+      const BrokenRunner = class {
+        constructor(config: Config) {}
+        start() {}
+        // Missing 'stop' and 'isReady' methods
+      };
+
+      config.plugins.targetRunner = '@visual-uat/broken-runner';
+      const registry = new PluginRegistry(config);
+      registry['builtins']['@visual-uat/broken-runner'] = BrokenRunner;
+
+      expect(() => registry.loadPlugin('targetRunner'))
+        .toThrow('does not implement targetRunner.stop()');
+    });
+
+    it('should throw error if differ plugin missing compare method', () => {
+      const BrokenDiffer = class {
+        constructor(config: Config) {}
+        // Missing 'compare' method
+      };
+
+      config.plugins.differ = '@visual-uat/broken-differ';
+      const registry = new PluginRegistry(config);
+      registry['builtins']['@visual-uat/broken-differ'] = BrokenDiffer;
+
+      expect(() => registry.loadPlugin('differ'))
+        .toThrow('does not implement differ.compare()');
+    });
+
+    it('should throw error if evaluator plugin missing evaluate method', () => {
+      const BrokenEvaluator = class {
+        constructor(config: Config) {}
+        // Missing 'evaluate' method
+      };
+
+      config.plugins.evaluator = '@visual-uat/broken-evaluator';
+      const registry = new PluginRegistry(config);
+      registry['builtins']['@visual-uat/broken-evaluator'] = BrokenEvaluator;
+
+      expect(() => registry.loadPlugin('evaluator'))
+        .toThrow('does not implement evaluator.evaluate()');
+    });
+
+    it('should throw error if plugin config is undefined', () => {
+      config.plugins.testGenerator = undefined as any;
+      const registry = new PluginRegistry(config);
+
+      expect(() => registry.loadPlugin('testGenerator'))
+        .toThrow('Plugin configuration for testGenerator is undefined');
+    });
   });
 
   describe('loadAll', () => {

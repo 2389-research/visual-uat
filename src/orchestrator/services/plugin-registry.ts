@@ -27,12 +27,36 @@ export class PluginRegistry {
 
   constructor(private config: Config) {}
 
+  private validatePlugin(plugin: any, type: PluginType): void {
+    const requiredMethods: Record<PluginType, string[]> = {
+      'testGenerator': ['generate'],
+      'targetRunner': ['start', 'stop', 'isReady'],
+      'differ': ['compare'],
+      'evaluator': ['evaluate']
+    };
+
+    const methods = requiredMethods[type];
+    for (const method of methods) {
+      if (typeof plugin[method] !== 'function') {
+        throw new Error(
+          `Plugin ${this.config.plugins[type]} does not implement ${type}.${method}()`
+        );
+      }
+    }
+  }
+
   loadPlugin(type: PluginType): TestGenerator | TargetRunner | Differ | Evaluator {
     const pluginName = this.config.plugins[type];
 
+    if (pluginName === undefined || pluginName === null) {
+      throw new Error(`Plugin configuration for ${type} is undefined`);
+    }
+
     if (pluginName in this.builtins) {
       const PluginClass = this.builtins[pluginName];
-      return new PluginClass(this.config);
+      const instance = new PluginClass(this.config);
+      this.validatePlugin(instance, type);
+      return instance;
     }
 
     // Future: External plugins
