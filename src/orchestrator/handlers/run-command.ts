@@ -10,6 +10,7 @@ import { ExecutionState, ExecutionContext, ExecutionScope, RawTestResult } from 
 import { WorktreeManager } from '../services/worktree-manager';
 import { TestRunner } from '../services/test-runner';
 import { ResultStore } from '../services/result-store';
+import { generateRunId } from '../services/run-id-generator';
 import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -394,6 +395,11 @@ export class RunCommandHandler {
     context: ExecutionContext
   ): Promise<ExecutionState> {
     try {
+      // Generate runId if not already set
+      if (!context.runResult!.runId) {
+        context.runResult!.runId = generateRunId();
+      }
+
       await this.resultStore.saveRunResult(context.runResult!);
       console.log('Results saved');
       return 'CLEANUP';
