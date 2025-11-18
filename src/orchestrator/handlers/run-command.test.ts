@@ -455,3 +455,89 @@ describe('RunCommandHandler.handleExecuteBase', () => {
     expect(context.baseResults.get('tests/broken.md')?.status).toBe('errored');
   });
 });
+
+describe('RunCommandHandler.handleExecuteCurrent', () => {
+  let config: Config;
+  let mockPlugins: LoadedPlugins;
+
+  beforeEach(() => {
+    config = {
+      baseBranch: 'main',
+      specsDir: './tests',
+      generatedDir: './tests/generated',
+      plugins: {
+        testGenerator: '@visual-uat/stub-generator',
+        targetRunner: '@visual-uat/playwright-runner',
+        differ: '@visual-uat/pixelmatch-differ',
+        evaluator: '@visual-uat/claude-evaluator'
+      }
+    } as Config;
+
+    mockPlugins = {
+      testGenerator: { generate: jest.fn() } as any,
+      targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
+      differ: { compare: jest.fn() } as any,
+      evaluator: { evaluate: jest.fn() } as any
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it('should run tests in current worktree and transition to COMPARE_AND_EVALUATE', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    const mockRunTest = jest.fn().mockResolvedValue({
+      testPath: 'tests/generated/login.spec.ts',
+      status: 'passed',
+      duration: 1500,
+      screenshots: ['initial.png', 'after-login.png']
+    });
+
+    // Mock TestRunner
+    (TestRunner as jest.Mock).mockImplementation(() => ({
+      runTest: mockRunTest
+    }));
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    const context: ExecutionContext = {
+      scope: {
+        type: 'full',
+        baseBranch: 'main',
+        specsToGenerate: ['tests/login.md']
+      },
+      worktrees: {
+        base: '/worktrees/base',
+        current: '/worktrees/current'
+      },
+      baseResults: new Map([
+        ['tests/login.md', {
+          testPath: 'tests/generated/login.spec.ts',
+          status: 'passed',
+          duration: 1400,
+          screenshots: ['initial.png', 'after-login.png']
+        }]
+      ]),
+      currentResults: new Map(),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleExecuteCurrent(context);
+
+    expect(nextState).toBe('COMPARE_AND_EVALUATE');
+    expect(context.currentResults.size).toBe(1);
+  });
+});

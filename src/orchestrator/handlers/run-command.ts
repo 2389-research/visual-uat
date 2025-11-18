@@ -170,6 +170,42 @@ export class RunCommandHandler {
     }
   }
 
+  private async handleExecuteCurrent(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      const screenshotDir = path.join(
+        this.projectRoot,
+        '.visual-uat/screenshots/current'
+      );
+      const runner = new TestRunner(context.worktrees!.current, screenshotDir);
+
+      const specsToRun = context.scope!.specsToGenerate;
+
+      for (const specPath of specsToRun) {
+        const baseName = path.basename(specPath, '.md');
+        const testPath = path.join(
+          this.config.generatedDir,
+          `${baseName}.spec.ts`
+        );
+
+        console.log(`Running current test: ${baseName}`);
+        const result = await runner.runTest(testPath);
+
+        context.currentResults.set(specPath, result);
+
+        if (result.status === 'errored') {
+          console.warn(`Current test errored: ${baseName} - ${result.error}`);
+        }
+      }
+
+      return 'COMPARE_AND_EVALUATE';
+    } catch (error) {
+      console.error('Current execution failed:', error);
+      return 'FAILED';
+    }
+  }
+
   async execute(options: RunOptions): Promise<number> {
     // To be implemented in subsequent steps
     throw new Error('Not yet implemented');
