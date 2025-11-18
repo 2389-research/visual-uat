@@ -26,6 +26,8 @@ export class HTMLReporter implements ReporterPlugin {
 
   private generateHTML(result: RunResult, options: ReporterOptions): string {
     const testCardsHTML = result.tests.map(test => this.generateTestCard(test)).join('\n');
+    const filterBarHTML = this.generateFilterBar();
+    const scriptHTML = this.generateFilterScript();
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -93,6 +95,54 @@ export class HTMLReporter implements ReporterPlugin {
       text-transform: uppercase;
       margin-top: 5px;
     }
+    .filter-bar {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .filter-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .filter-button {
+      padding: 8px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .filter-button:hover {
+      border-color: #9ca3af;
+    }
+    .filter-button.active {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      color: #1e40af;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+    }
+    #search-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    #search-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
     .tests {
       margin-top: 20px;
     }
@@ -114,6 +164,9 @@ export class HTMLReporter implements ReporterPlugin {
     }
     .test-card.errored {
       border-left-color: #6b7280;
+    }
+    .test-card.hidden {
+      display: none;
     }
     .test-header {
       display: flex;
@@ -184,9 +237,13 @@ export class HTMLReporter implements ReporterPlugin {
     </div>
   </div>
 
+  ${filterBarHTML}
+
   <div class="tests">
     ${testCardsHTML}
   </div>
+
+  ${scriptHTML}
 </body>
 </html>`;
   }
@@ -223,5 +280,83 @@ export class HTMLReporter implements ReporterPlugin {
       "'": '&#39;'
     };
     return str.replace(/[&<>"']/g, char => htmlEscapeMap[char]);
+  }
+
+  private generateFilterBar(): string {
+    return `
+  <div class="filter-bar">
+    <div class="filter-buttons">
+      <button class="filter-button active" data-filter="all">All</button>
+      <button class="filter-button" data-filter="passed">Passed</button>
+      <button class="filter-button" data-filter="needs-review">Needs Review</button>
+      <button class="filter-button" data-filter="failed">Failed</button>
+      <button class="filter-button" data-filter="errored">Errored</button>
+    </div>
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="Search tests by name...">
+    </div>
+  </div>`;
+  }
+
+  private generateFilterScript(): string {
+    return `
+  <script>
+    (function() {
+      let currentStatusFilter = 'all';
+      let currentSearchText = '';
+
+      const filterButtons = document.querySelectorAll('.filter-button');
+      const summaryBoxes = document.querySelectorAll('.summary-box');
+      const searchInput = document.getElementById('search-input');
+      const testCards = document.querySelectorAll('.test-card');
+
+      function applyFilters() {
+        testCards.forEach(card => {
+          const cardStatus = card.getAttribute('data-status');
+          const cardName = card.querySelector('.test-name').textContent.toLowerCase();
+
+          const matchesStatus = currentStatusFilter === 'all' || cardStatus === currentStatusFilter;
+          const matchesSearch = currentSearchText === '' || cardName.includes(currentSearchText.toLowerCase());
+
+          if (matchesStatus && matchesSearch) {
+            card.classList.remove('hidden');
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+      }
+
+      function setActiveButton(filterValue) {
+        filterButtons.forEach(btn => {
+          if (btn.getAttribute('data-filter') === filterValue) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      }
+
+      filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          currentStatusFilter = this.getAttribute('data-filter');
+          setActiveButton(currentStatusFilter);
+          applyFilters();
+        });
+      });
+
+      summaryBoxes.forEach(box => {
+        box.addEventListener('click', function() {
+          currentStatusFilter = this.getAttribute('data-filter');
+          setActiveButton(currentStatusFilter);
+          applyFilters();
+        });
+      });
+
+      searchInput.addEventListener('input', function() {
+        currentSearchText = this.value;
+        applyFilters();
+      });
+    })();
+  </script>`;
   }
 }

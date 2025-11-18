@@ -325,4 +325,120 @@ describe('HTMLReporter', () => {
     expect(content).toContain('&quot;');
     expect(content).not.toContain('test-with-<html>-&-quotes"');
   });
+
+  describe('Filter Bar', () => {
+    it('should include filter bar with status buttons and search input', async () => {
+      const reporter = new HTMLReporter();
+      const result: RunResult = {
+        runId: 'a3f7b9c',
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      };
+
+      await reporter.generate(result, { outputDir: testOutputDir });
+
+      const files = fs.readdirSync(testOutputDir);
+      const htmlFile = path.join(testOutputDir, files[0]);
+      const content = fs.readFileSync(htmlFile, 'utf-8');
+
+      // Filter bar container
+      expect(content).toContain('class="filter-bar"');
+
+      // Status filter buttons
+      expect(content).toContain('data-filter="all"');
+      expect(content).toContain('data-filter="passed"');
+      expect(content).toContain('data-filter="needs-review"');
+      expect(content).toContain('data-filter="failed"');
+      expect(content).toContain('data-filter="errored"');
+
+      // Button text
+      expect(content).toContain('>All</');
+      expect(content).toContain('>Passed</');
+      expect(content).toContain('>Needs Review</');
+      expect(content).toContain('>Failed</');
+      expect(content).toContain('>Errored</');
+
+      // Search input
+      expect(content).toContain('id="search-input"');
+      expect(content).toContain('type="text"');
+      expect(content).toContain('placeholder="Search tests');
+    });
+
+    it('should include JavaScript filtering logic', async () => {
+      const reporter = new HTMLReporter();
+      const result: RunResult = {
+        runId: 'a3f7b9c',
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [
+          {
+            specPath: 'tests/login.md',
+            generatedPath: 'tests/generated/login.spec.ts',
+            status: 'passed',
+            checkpoints: [],
+            duration: 1200,
+            baselineAvailable: true
+          }
+        ],
+        summary: { total: 1, passed: 1, failed: 0, errored: 0, needsReview: 0 }
+      };
+
+      await reporter.generate(result, { outputDir: testOutputDir });
+
+      const files = fs.readdirSync(testOutputDir);
+      const htmlFile = path.join(testOutputDir, files[0]);
+      const content = fs.readFileSync(htmlFile, 'utf-8');
+
+      // Check for script tag with filtering logic
+      expect(content).toContain('<script>');
+      expect(content).toContain('</script>');
+
+      // Check for key filtering functions/logic
+      expect(content).toContain('addEventListener');
+      expect(content).toContain('querySelectorAll');
+      expect(content).toContain('.test-card');
+
+      // Check for status filtering logic
+      expect(content).toContain('data-filter');
+      expect(content).toContain('data-status');
+
+      // Check for search filtering logic
+      expect(content).toContain('search');
+      expect(content).toContain('toLowerCase');
+    });
+
+    it('should make summary boxes clickable to filter', async () => {
+      const reporter = new HTMLReporter();
+      const result: RunResult = {
+        runId: 'a3f7b9c',
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      };
+
+      await reporter.generate(result, { outputDir: testOutputDir });
+
+      const files = fs.readdirSync(testOutputDir);
+      const htmlFile = path.join(testOutputDir, files[0]);
+      const content = fs.readFileSync(htmlFile, 'utf-8');
+
+      // Summary boxes should have data-filter attribute
+      expect(content).toContain('class="summary-box passed" data-filter="passed"');
+      expect(content).toContain('class="summary-box needs-review" data-filter="needs-review"');
+      expect(content).toContain('class="summary-box failed" data-filter="failed"');
+      expect(content).toContain('class="summary-box errored" data-filter="errored"');
+
+      // Should have event listeners for summary boxes
+      expect(content).toContain('.summary-box');
+    });
+  });
 });
