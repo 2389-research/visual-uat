@@ -393,19 +393,26 @@ export class RunCommandHandler {
   }
 
   private getVerbosity(): 'quiet' | 'normal' | 'verbose' {
-    if (!this.runOptions) {
-      return 'normal';
+    // CLI flags take precedence over config
+    if (this.runOptions) {
+      // Warn if both quiet and verbose are specified (conflicting flags)
+      if (this.runOptions.quiet && this.runOptions.verbose) {
+        console.warn('Warning: Both --quiet and --verbose flags specified. Using --quiet.');
+      }
+      if (this.runOptions.quiet) {
+        return 'quiet';
+      }
+      if (this.runOptions.verbose) {
+        return 'verbose';
+      }
     }
-    // Warn if both quiet and verbose are specified (conflicting flags)
-    if (this.runOptions.quiet && this.runOptions.verbose) {
-      console.warn('Warning: Both --quiet and --verbose flags specified. Using --quiet.');
+
+    // Use config default verbosity if specified
+    if (this.config.reporters?.terminal?.defaultVerbosity) {
+      return this.config.reporters.terminal.defaultVerbosity;
     }
-    if (this.runOptions.quiet) {
-      return 'quiet';
-    }
-    if (this.runOptions.verbose) {
-      return 'verbose';
-    }
+
+    // Default to normal
     return 'normal';
   }
 
@@ -425,19 +432,23 @@ export class RunCommandHandler {
       const reporterOptions: ReporterOptions = {
         verbosity: this.getVerbosity(),
         outputDir: path.join(this.projectRoot, '.visual-uat/reports'),
-        embedImages: false,
+        embedImages: this.config.reporters?.html?.embedImages || false,
         autoOpen: this.runOptions?.open || false
       };
 
-      // Call terminal reporter first for immediate feedback
-      try {
-        await this.plugins.terminalReporter.generate(context.runResult!, reporterOptions);
-      } catch (error) {
-        console.error('Terminal reporter failed:', error);
+      // Call terminal reporter first for immediate feedback (unless disabled in config)
+      const terminalEnabled = this.config.reporters?.terminal?.enabled !== false;
+      if (terminalEnabled) {
+        try {
+          await this.plugins.terminalReporter.generate(context.runResult!, reporterOptions);
+        } catch (error) {
+          console.error('Terminal reporter failed:', error);
+        }
       }
 
-      // Call HTML reporter second (unless --no-html flag is set)
-      if (!this.runOptions?.noHtml) {
+      // Call HTML reporter second (unless --no-html flag is set or disabled in config)
+      const htmlEnabled = this.config.reporters?.html?.enabled !== false;
+      if (!this.runOptions?.noHtml && htmlEnabled) {
         try {
           await this.plugins.htmlReporter.generate(context.runResult!, reporterOptions);
         } catch (error) {
