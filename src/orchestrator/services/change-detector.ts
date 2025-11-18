@@ -14,6 +14,8 @@ export interface RunOptions {
   baseBranch?: string;
   failFast?: boolean;
   keepWorktrees?: boolean;
+  quiet?: boolean;
+  verbose?: boolean;
 }
 
 export class ChangeDetector {

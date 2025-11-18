@@ -23,6 +23,7 @@ export interface GenerationResult {
 export class RunCommandHandler {
   private changeDetector: ChangeDetector;
   private resultStore: ResultStore;
+  private runOptions?: RunOptions;
 
   constructor(
     private config: Config,
@@ -391,6 +392,19 @@ export class RunCommandHandler {
     }
   }
 
+  private getVerbosity(): 'quiet' | 'normal' | 'verbose' {
+    if (!this.runOptions) {
+      return 'normal';
+    }
+    if (this.runOptions.quiet) {
+      return 'quiet';
+    }
+    if (this.runOptions.verbose) {
+      return 'verbose';
+    }
+    return 'normal';
+  }
+
   private async handleStoreResults(
     context: ExecutionContext
   ): Promise<ExecutionState> {
@@ -405,9 +419,10 @@ export class RunCommandHandler {
 
       // Generate reports
       const reporterOptions: ReporterOptions = {
-        verbosity: 'normal',
-        outputDir: '.visual-uat/reports',
-        embedImages: false
+        verbosity: this.getVerbosity(),
+        outputDir: path.join(this.projectRoot, '.visual-uat/reports'),
+        embedImages: false,
+        autoOpen: false
       };
 
       // Call terminal reporter first for immediate feedback
@@ -451,6 +466,9 @@ export class RunCommandHandler {
   }
 
   async execute(options: RunOptions): Promise<number> {
+    // Store runOptions for access by helper methods
+    this.runOptions = options;
+
     let state: ExecutionState = 'SETUP';
     const context: ExecutionContext = {
       scope: null,
