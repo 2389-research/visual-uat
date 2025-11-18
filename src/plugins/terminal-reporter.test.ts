@@ -196,7 +196,8 @@ describe('TerminalReporter', () => {
     });
   });
 
-  it('should show runId in all verbosity modes', async () => {
+  it('should show runId in quiet mode', async () => {
+    output = [];
     const reporter = new TerminalReporter();
     const result: RunResult = {
       runId: 'a3f7b9c',
@@ -209,6 +210,40 @@ describe('TerminalReporter', () => {
     };
 
     await reporter.generate(result, { verbosity: 'quiet' });
+    expect(output.some(line => line.includes('Run ID: a3f7b9c'))).toBe(true);
+  });
+
+  it('should show runId in normal mode', async () => {
+    output = [];
+    const reporter = new TerminalReporter();
+    const result: RunResult = {
+      runId: 'a3f7b9c',
+      timestamp: Date.now(),
+      baseBranch: 'main',
+      currentBranch: 'feature/test',
+      config: {} as any,
+      tests: [],
+      summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+    };
+
+    await reporter.generate(result, { verbosity: 'normal' });
+    expect(output.some(line => line.includes('Run ID: a3f7b9c'))).toBe(true);
+  });
+
+  it('should show runId in verbose mode', async () => {
+    output = [];
+    const reporter = new TerminalReporter();
+    const result: RunResult = {
+      runId: 'a3f7b9c',
+      timestamp: Date.now(),
+      baseBranch: 'main',
+      currentBranch: 'feature/test',
+      config: {} as any,
+      tests: [],
+      summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+    };
+
+    await reporter.generate(result, { verbosity: 'verbose' });
     expect(output.some(line => line.includes('Run ID: a3f7b9c'))).toBe(true);
   });
 });
