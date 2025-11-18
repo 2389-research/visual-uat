@@ -403,6 +403,55 @@ describe('HTMLReporter', () => {
       expect(content).toContain('.test-card.failed');
       expect(content).toContain('expanded');
     });
+
+    it('should escape image paths with special characters to prevent XSS', async () => {
+      const reporter = new HTMLReporter();
+      const result: RunResult = {
+        runId: 'a3f7b9c',
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [
+          {
+            specPath: 'tests/malicious.md',
+            generatedPath: 'tests/generated/malicious.spec.ts',
+            status: 'needs-review',
+            checkpoints: [
+              {
+                name: 'xss-attempt',
+                baselineImage: 'path/with"quotes\'and<tags>&ampersand.png',
+                currentImage: 'path/with"quotes\'and<tags>&ampersand-current.png',
+                diffImage: 'path/with"quotes\'and<tags>&ampersand-diff.png',
+                diffMetrics: { pixelDiffPercent: 1.5, changedRegions: [] },
+                evaluation: {
+                  pass: false,
+                  confidence: 0.9,
+                  reason: 'Testing XSS prevention',
+                  needsReview: true
+                }
+              }
+            ],
+            duration: 1500,
+            baselineAvailable: true
+          }
+        ],
+        summary: { total: 1, passed: 0, failed: 0, errored: 0, needsReview: 1 }
+      };
+
+      await reporter.generate(result, { outputDir: testOutputDir });
+
+      const files = fs.readdirSync(testOutputDir);
+      const htmlFile = path.join(testOutputDir, files[0]);
+      const content = fs.readFileSync(htmlFile, 'utf-8');
+
+      // Verify special characters are properly escaped in image src attributes
+      expect(content).toContain('&quot;quotes&#39;and&lt;tags&gt;&amp;ampersand');
+
+      // Verify the unescaped version is NOT present (would be XSS vulnerability)
+      expect(content).not.toContain('src="path/with"quotes');
+      expect(content).not.toContain('path/with"quotes\'and<tags>&ampersand.png"');
+    });
   });
 
   describe('Filter Bar', () => {

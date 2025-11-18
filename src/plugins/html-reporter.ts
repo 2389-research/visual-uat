@@ -413,13 +413,13 @@ export class HTMLReporter implements ReporterPlugin {
       </div>
 
       <div class="comparison-container">
-        <img src="${checkpoint.baselineImage}" class="baseline-img" alt="Baseline" loading="lazy">
-        <img src="${checkpoint.currentImage}" class="current-img" alt="Current" loading="lazy" style="clip-path: inset(0 50% 0 0);">
+        <img src="${this.escapeHTML(checkpoint.baselineImage)}" class="baseline-img" alt="Baseline" loading="lazy">
+        <img src="${this.escapeHTML(checkpoint.currentImage)}" class="current-img" alt="Current" loading="lazy" style="clip-path: inset(0 50% 0 0);">
       </div>
       <input type="range" min="0" max="100" value="50" class="slider"
              onchange="updateSlider(this)" oninput="updateSlider(this)">
 
-      <img src="${checkpoint.diffImage}" class="diff-img" style="display: none;" alt="Diff" loading="lazy">
+      <img src="${this.escapeHTML(checkpoint.diffImage)}" class="diff-img" style="display: none;" alt="Diff" loading="lazy">
     </div>
   `;
   }
