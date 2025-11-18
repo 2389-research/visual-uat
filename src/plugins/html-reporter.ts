@@ -2,7 +2,7 @@
 // ABOUTME: Includes interactive image comparison, filtering, and embedded styling.
 
 import { ReporterPlugin, ReporterOptions } from '../types/plugins';
-import { RunResult } from '../orchestrator/types/results';
+import { RunResult, TestResult } from '../orchestrator/types/results';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -25,6 +25,8 @@ export class HTMLReporter implements ReporterPlugin {
   }
 
   private generateHTML(result: RunResult, options: ReporterOptions): string {
+    const testCardsHTML = result.tests.map(test => this.generateTestCard(test)).join('\n');
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -91,6 +93,66 @@ export class HTMLReporter implements ReporterPlugin {
       text-transform: uppercase;
       margin-top: 5px;
     }
+    .tests {
+      margin-top: 20px;
+    }
+    .test-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 4px solid #ccc;
+    }
+    .test-card.passed {
+      border-left-color: #10b981;
+    }
+    .test-card.needs-review {
+      border-left-color: #f59e0b;
+    }
+    .test-card.failed {
+      border-left-color: #ef4444;
+    }
+    .test-card.errored {
+      border-left-color: #6b7280;
+    }
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .test-name {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .test-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .test-status.passed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .test-status.needs-review {
+      background: #fed7aa;
+      color: #92400e;
+    }
+    .test-status.failed {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .test-status.errored {
+      background: #e5e7eb;
+      color: #1f2937;
+    }
+    .test-duration {
+      color: #6b7280;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -121,7 +183,33 @@ export class HTMLReporter implements ReporterPlugin {
       </div>
     </div>
   </div>
+
+  <div class="tests">
+    ${testCardsHTML}
+  </div>
 </body>
 </html>`;
+  }
+
+  private generateTestCard(test: TestResult): string {
+    const name = path.basename(test.specPath, '.md');
+    const duration = this.formatDuration(test.duration);
+
+    return `
+    <div class="test-card ${test.status}" data-status="${test.status}">
+      <div class="test-header">
+        <div>
+          <span class="test-name">${name}</span>
+          <span class="test-duration">${duration}</span>
+        </div>
+        <span class="test-status ${test.status}">${test.status}</span>
+      </div>
+    </div>
+  `;
+  }
+
+  private formatDuration(ms: number): string {
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(1)}s`;
   }
 }

@@ -120,4 +120,46 @@ describe('HTMLReporter', () => {
 
     expect(content).toContain('class="summary-box');
   });
+
+  it('should list all tests with status', async () => {
+    const reporter = new HTMLReporter();
+    const result: RunResult = {
+      runId: 'a3f7b9c',
+      timestamp: Date.now(),
+      baseBranch: 'main',
+      currentBranch: 'feature/test',
+      config: {} as any,
+      tests: [
+        {
+          specPath: 'tests/login.md',
+          generatedPath: 'tests/generated/login.spec.ts',
+          status: 'passed',
+          checkpoints: [],
+          duration: 1200,
+          baselineAvailable: true
+        },
+        {
+          specPath: 'tests/dashboard.md',
+          generatedPath: 'tests/generated/dashboard.spec.ts',
+          status: 'needs-review',
+          checkpoints: [],
+          duration: 2100,
+          baselineAvailable: true
+        }
+      ],
+      summary: { total: 2, passed: 1, failed: 0, errored: 0, needsReview: 1 }
+    };
+
+    await reporter.generate(result, { outputDir: testOutputDir });
+
+    const files = fs.readdirSync(testOutputDir);
+    const htmlFile = path.join(testOutputDir, files[0]);
+    const content = fs.readFileSync(htmlFile, 'utf-8');
+
+    expect(content).toContain('login');
+    expect(content).toContain('dashboard');
+    expect(content).toContain('1.2s'); // formatted duration
+    expect(content).toContain('2.1s');
+    expect(content).toContain('class="test-card');
+  });
 });
