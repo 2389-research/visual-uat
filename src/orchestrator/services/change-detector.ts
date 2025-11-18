@@ -7,7 +7,7 @@ import * as path from 'path';
 import { Config } from '../../types/config';
 import { SpecManifest } from '../../specs/manifest';
 
-export type ExecutionScope = 'full' | 'incremental' | 'skip';
+type ScopeType = 'full' | 'incremental' | 'skip';
 
 export interface RunOptions {
   all?: boolean;
@@ -23,7 +23,7 @@ export class ChangeDetector {
     private projectRoot: string
   ) {}
 
-  determineScope(options: RunOptions): ExecutionScope {
+  determineScope(options: RunOptions): ScopeType {
     // Explicit flag overrides all
     if (options.all) {
       return 'full';
@@ -47,7 +47,7 @@ export class ChangeDetector {
     return 'skip';
   }
 
-  getSpecsToGenerate(scope: ExecutionScope): string[] {
+  getSpecsToGenerate(scope: ScopeType): string[] {
     if (scope === 'full') {
       return this.findSpecFiles();
     } else if (scope === 'incremental') {
