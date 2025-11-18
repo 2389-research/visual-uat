@@ -88,4 +88,29 @@ describe('HTMLReporter', () => {
     expect(content).toContain('main');
     expect(content).toContain('a3f7b9c');
   });
+
+  it('should include summary boxes with counts', async () => {
+    const reporter = new HTMLReporter();
+    const result: RunResult = {
+      runId: 'a3f7b9c',
+      timestamp: Date.now(),
+      baseBranch: 'main',
+      currentBranch: 'feature/test',
+      config: {} as any,
+      tests: [],
+      summary: { total: 10, passed: 5, failed: 2, errored: 1, needsReview: 2 }
+    };
+
+    await reporter.generate(result, { outputDir: testOutputDir });
+
+    const files = fs.readdirSync(testOutputDir);
+    const htmlFile = path.join(testOutputDir, files[0]);
+    const content = fs.readFileSync(htmlFile, 'utf-8');
+
+    expect(content).toContain('5'); // passed count
+    expect(content).toContain('2'); // needs review count
+    expect(content).toContain('2'); // failed count
+    expect(content).toContain('1'); // errored count
+    expect(content).toContain('class="summary-box');
+  });
 });

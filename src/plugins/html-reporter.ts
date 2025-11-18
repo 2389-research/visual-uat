@@ -50,6 +50,47 @@ export class HTMLReporter implements ReporterPlugin {
       margin-top: 10px;
       color: #666;
     }
+    .summary {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .summary-box {
+      flex: 1;
+      padding: 20px;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .summary-box:hover {
+      transform: scale(1.05);
+    }
+    .summary-box.passed {
+      background: #10b981;
+      color: white;
+    }
+    .summary-box.needs-review {
+      background: #f59e0b;
+      color: white;
+    }
+    .summary-box.failed {
+      background: #ef4444;
+      color: white;
+    }
+    .summary-box.errored {
+      background: #6b7280;
+      color: white;
+    }
+    .summary-box .count {
+      font-size: 36px;
+      font-weight: bold;
+    }
+    .summary-box .label {
+      font-size: 14px;
+      text-transform: uppercase;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -60,6 +101,24 @@ export class HTMLReporter implements ReporterPlugin {
       <div><strong>Base:</strong> ${result.baseBranch}</div>
       <div><strong>Run ID:</strong> ${result.runId}</div>
       <div><strong>Date:</strong> ${new Date(result.timestamp).toLocaleString()}</div>
+    </div>
+    <div class="summary">
+      <div class="summary-box passed" data-filter="passed">
+        <div class="count">${result.summary.passed}</div>
+        <div class="label">Passed</div>
+      </div>
+      <div class="summary-box needs-review" data-filter="needs-review">
+        <div class="count">${result.summary.needsReview}</div>
+        <div class="label">Needs Review</div>
+      </div>
+      <div class="summary-box failed" data-filter="failed">
+        <div class="count">${result.summary.failed}</div>
+        <div class="label">Failed</div>
+      </div>
+      <div class="summary-box errored" data-filter="errored">
+        <div class="count">${result.summary.errored}</div>
+        <div class="label">Errored</div>
+      </div>
     </div>
   </div>
 </body>
