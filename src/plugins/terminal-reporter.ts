@@ -30,9 +30,11 @@ export class TerminalReporter implements ReporterPlugin {
     console.log('  ' + parts.join(', '));
 
     if (options.outputDir) {
-      const reportPath = this.getReportPath(result.timestamp, options.outputDir);
+      const reportPath = this.getReportPath(result.timestamp, result.runId, options.outputDir);
       console.log(`  Report: ${reportPath}`);
     }
+
+    console.log(`  Run ID: ${result.runId}`);
   }
 
   private printNormal(result: RunResult, options: ReporterOptions): void {
@@ -59,9 +61,10 @@ export class TerminalReporter implements ReporterPlugin {
     this.printSummary(result);
 
     if (options.outputDir) {
-      const reportPath = this.getReportPath(result.timestamp, options.outputDir);
+      const reportPath = this.getReportPath(result.timestamp, result.runId, options.outputDir);
       console.log(`Report: ${reportPath}`);
     }
+    console.log(`Run ID: ${result.runId}`);
   }
 
   private printVerbose(result: RunResult, options: ReporterOptions): void {
@@ -96,9 +99,10 @@ export class TerminalReporter implements ReporterPlugin {
     this.printSummary(result);
 
     if (options.outputDir) {
-      const reportPath = this.getReportPath(result.timestamp, options.outputDir);
+      const reportPath = this.getReportPath(result.timestamp, result.runId, options.outputDir);
       console.log(`Report: ${reportPath}`);
     }
+    console.log(`Run ID: ${result.runId}`);
   }
 
   private getStatusIcon(status: string): string {
@@ -126,9 +130,9 @@ export class TerminalReporter implements ReporterPlugin {
     console.log('Summary: ' + parts.join(', '));
   }
 
-  private getReportPath(timestamp: number, outputDir: string): string {
+  private getReportPath(timestamp: number, runId: string, outputDir: string): string {
     const date = new Date(timestamp);
     const formatted = date.toISOString().slice(0, 19).replace(/[:T]/g, '-');
-    return path.join(outputDir, `${formatted}.html`);
+    return path.join(outputDir, `${formatted}-${runId}.html`);
   }
 }

@@ -195,4 +195,20 @@ describe('TerminalReporter', () => {
       expect(output.some(line => line.includes('Layout shifted'))).toBe(true);
     });
   });
+
+  it('should show runId in all verbosity modes', async () => {
+    const reporter = new TerminalReporter();
+    const result: RunResult = {
+      runId: 'a3f7b9c',
+      timestamp: Date.now(),
+      baseBranch: 'main',
+      currentBranch: 'feature/test',
+      config: {} as any,
+      tests: [],
+      summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+    };
+
+    await reporter.generate(result, { verbosity: 'quiet' });
+    expect(output.some(line => line.includes('Run ID: a3f7b9c'))).toBe(true);
+  });
 });
