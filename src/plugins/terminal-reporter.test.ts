@@ -90,4 +90,105 @@ describe('TerminalReporter', () => {
       expect(output.some(line => line.includes('.visual-uat/reports'))).toBe(true);
     });
   });
+
+  describe('normal mode', () => {
+    it('should show test-by-test status in normal mode', async () => {
+      const reporter = new TerminalReporter();
+      const result: RunResult = {
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [
+          {
+            specPath: 'tests/login.md',
+            generatedPath: 'tests/generated/login.spec.ts',
+            status: 'passed',
+            checkpoints: [],
+            duration: 1200,
+            baselineAvailable: true
+          },
+          {
+            specPath: 'tests/dashboard.md',
+            generatedPath: 'tests/generated/dashboard.spec.ts',
+            status: 'needs-review',
+            checkpoints: [
+              {
+                name: 'initial',
+                baselineImage: '',
+                currentImage: '',
+                diffImage: '',
+                diffMetrics: { pixelDiffPercent: 2.3, changedRegions: [] },
+                evaluation: { pass: false, confidence: 0.8, reason: 'Layout shifted', needsReview: true }
+              }
+            ],
+            duration: 2100,
+            baselineAvailable: true
+          },
+          {
+            specPath: 'tests/broken.md',
+            generatedPath: 'tests/generated/broken.spec.ts',
+            status: 'failed',
+            checkpoints: [],
+            duration: 800,
+            error: 'Button position changed',
+            baselineAvailable: true
+          }
+        ],
+        summary: { total: 3, passed: 1, failed: 1, errored: 0, needsReview: 1 }
+      };
+
+      await reporter.generate(result, { verbosity: 'normal' });
+
+      // Should show header
+      expect(output.some(line => line.includes('feature/test vs main'))).toBe(true);
+
+      // Should show each test with status
+      expect(output.some(line => line.includes('✓') && line.includes('login'))).toBe(true);
+      expect(output.some(line => line.includes('⚠') && line.includes('dashboard'))).toBe(true);
+      expect(output.some(line => line.includes('✗') && line.includes('broken'))).toBe(true);
+
+      // Should show summary
+      expect(output.some(line => line.includes('Summary'))).toBe(true);
+    });
+  });
+
+  describe('verbose mode', () => {
+    it('should show detailed information in verbose mode', async () => {
+      const reporter = new TerminalReporter();
+      const result: RunResult = {
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [
+          {
+            specPath: 'tests/dashboard.md',
+            generatedPath: 'tests/generated/dashboard.spec.ts',
+            status: 'needs-review',
+            checkpoints: [
+              {
+                name: 'initial',
+                baselineImage: '',
+                currentImage: '',
+                diffImage: '',
+                diffMetrics: { pixelDiffPercent: 2.3, changedRegions: [] },
+                evaluation: { pass: false, confidence: 0.8, reason: 'Layout shifted slightly', needsReview: true }
+              }
+            ],
+            duration: 2100,
+            baselineAvailable: true
+          }
+        ],
+        summary: { total: 1, passed: 0, failed: 0, errored: 0, needsReview: 1 }
+      };
+
+      await reporter.generate(result, { verbosity: 'verbose' });
+
+      // Should show checkpoint details
+      expect(output.some(line => line.includes('initial'))).toBe(true);
+      expect(output.some(line => line.includes('2.3%'))).toBe(true);
+      expect(output.some(line => line.includes('Layout shifted'))).toBe(true);
+    });
+  });
 });
