@@ -77,3 +77,14 @@ export interface EvaluationResult {
 export interface Evaluator {
   evaluate(input: EvaluationInput): Promise<EvaluationResult>;
 }
+
+export interface ReporterOptions {
+  verbosity?: 'quiet' | 'normal' | 'verbose';
+  outputDir?: string;
+  embedImages?: boolean;
+  autoOpen?: boolean;
+}
+
+export interface ReporterPlugin {
+  generate(result: import('../orchestrator/types/results').RunResult, options: ReporterOptions): Promise<void>;
+}
