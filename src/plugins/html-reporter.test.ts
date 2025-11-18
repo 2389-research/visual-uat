@@ -162,4 +162,167 @@ describe('HTMLReporter', () => {
     expect(content).toContain('2.1s');
     expect(content).toContain('class="test-card');
   });
+
+  it('should handle empty test list', async () => {
+    const reporter = new HTMLReporter();
+    const result: RunResult = {
+      runId: 'a3f7b9c',
+      timestamp: Date.now(),
+      baseBranch: 'main',
+      currentBranch: 'feature/test',
+      config: {} as any,
+      tests: [],
+      summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+    };
+
+    await reporter.generate(result, { outputDir: testOutputDir });
+
+    const files = fs.readdirSync(testOutputDir);
+    const htmlFile = path.join(testOutputDir, files[0]);
+    const content = fs.readFileSync(htmlFile, 'utf-8');
+
+    expect(content).toContain('<!DOCTYPE html>');
+    expect(content).toContain('<div class="tests">');
+    expect(content).not.toContain('class="test-card');
+    expect(content).toContain('<div class="count">0</div>');
+  });
+
+  it('should display all status types correctly', async () => {
+    const reporter = new HTMLReporter();
+    const result: RunResult = {
+      runId: 'a3f7b9c',
+      timestamp: Date.now(),
+      baseBranch: 'main',
+      currentBranch: 'feature/test',
+      config: {} as any,
+      tests: [
+        {
+          specPath: 'tests/test-passed.md',
+          generatedPath: 'tests/generated/test-passed.spec.ts',
+          status: 'passed',
+          checkpoints: [],
+          duration: 1500,
+          baselineAvailable: true
+        },
+        {
+          specPath: 'tests/test-failed.md',
+          generatedPath: 'tests/generated/test-failed.spec.ts',
+          status: 'failed',
+          checkpoints: [],
+          duration: 2000,
+          baselineAvailable: true
+        },
+        {
+          specPath: 'tests/test-errored.md',
+          generatedPath: 'tests/generated/test-errored.spec.ts',
+          status: 'errored',
+          checkpoints: [],
+          duration: 500,
+          baselineAvailable: false
+        },
+        {
+          specPath: 'tests/test-needs-review.md',
+          generatedPath: 'tests/generated/test-needs-review.spec.ts',
+          status: 'needs-review',
+          checkpoints: [],
+          duration: 3200,
+          baselineAvailable: true
+        }
+      ],
+      summary: { total: 4, passed: 1, failed: 1, errored: 1, needsReview: 1 }
+    };
+
+    await reporter.generate(result, { outputDir: testOutputDir });
+
+    const files = fs.readdirSync(testOutputDir);
+    const htmlFile = path.join(testOutputDir, files[0]);
+    const content = fs.readFileSync(htmlFile, 'utf-8');
+
+    expect(content).toContain('test-passed');
+    expect(content).toContain('test-failed');
+    expect(content).toContain('test-errored');
+    expect(content).toContain('test-needs-review');
+
+    expect(content).toContain('class="test-card passed"');
+    expect(content).toContain('class="test-card failed"');
+    expect(content).toContain('class="test-card errored"');
+    expect(content).toContain('class="test-card needs-review"');
+
+    expect(content).toContain('class="test-status passed">passed</span>');
+    expect(content).toContain('class="test-status failed">failed</span>');
+    expect(content).toContain('class="test-status errored">errored</span>');
+    expect(content).toContain('class="test-status needs-review">needs-review</span>');
+  });
+
+  it('should format millisecond durations correctly', async () => {
+    const reporter = new HTMLReporter();
+    const result: RunResult = {
+      runId: 'a3f7b9c',
+      timestamp: Date.now(),
+      baseBranch: 'main',
+      currentBranch: 'feature/test',
+      config: {} as any,
+      tests: [
+        {
+          specPath: 'tests/fast-test.md',
+          generatedPath: 'tests/generated/fast-test.spec.ts',
+          status: 'passed',
+          checkpoints: [],
+          duration: 250,
+          baselineAvailable: true
+        },
+        {
+          specPath: 'tests/slow-test.md',
+          generatedPath: 'tests/generated/slow-test.spec.ts',
+          status: 'passed',
+          checkpoints: [],
+          duration: 5432,
+          baselineAvailable: true
+        }
+      ],
+      summary: { total: 2, passed: 2, failed: 0, errored: 0, needsReview: 0 }
+    };
+
+    await reporter.generate(result, { outputDir: testOutputDir });
+
+    const files = fs.readdirSync(testOutputDir);
+    const htmlFile = path.join(testOutputDir, files[0]);
+    const content = fs.readFileSync(htmlFile, 'utf-8');
+
+    expect(content).toContain('250ms');
+    expect(content).toContain('5.4s');
+  });
+
+  it('should escape HTML in test names to prevent XSS', async () => {
+    const reporter = new HTMLReporter();
+    const result: RunResult = {
+      runId: 'a3f7b9c',
+      timestamp: Date.now(),
+      baseBranch: 'main',
+      currentBranch: 'feature/test',
+      config: {} as any,
+      tests: [
+        {
+          specPath: 'tests/test-with-<html>-&-quotes".md',
+          generatedPath: 'tests/generated/malicious.spec.ts',
+          status: 'passed',
+          checkpoints: [],
+          duration: 1000,
+          baselineAvailable: true
+        }
+      ],
+      summary: { total: 1, passed: 1, failed: 0, errored: 0, needsReview: 0 }
+    };
+
+    await reporter.generate(result, { outputDir: testOutputDir });
+
+    const files = fs.readdirSync(testOutputDir);
+    const htmlFile = path.join(testOutputDir, files[0]);
+    const content = fs.readFileSync(htmlFile, 'utf-8');
+
+    expect(content).toContain('&lt;html&gt;');
+    expect(content).toContain('&amp;');
+    expect(content).toContain('&quot;');
+    expect(content).not.toContain('test-with-<html>-&-quotes"');
+  });
 });

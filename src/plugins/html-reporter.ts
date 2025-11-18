@@ -192,17 +192,18 @@ export class HTMLReporter implements ReporterPlugin {
   }
 
   private generateTestCard(test: TestResult): string {
-    const name = path.basename(test.specPath, '.md');
+    const name = this.escapeHTML(path.basename(test.specPath, '.md'));
+    const status = this.escapeHTML(test.status);
     const duration = this.formatDuration(test.duration);
 
     return `
-    <div class="test-card ${test.status}" data-status="${test.status}">
+    <div class="test-card ${status}" data-status="${status}">
       <div class="test-header">
         <div>
           <span class="test-name">${name}</span>
-          <span class="test-duration">${duration}</span>
+          <span class="test-duration"> ${duration}</span>
         </div>
-        <span class="test-status ${test.status}">${test.status}</span>
+        <span class="test-status ${status}">${status}</span>
       </div>
     </div>
   `;
@@ -211,5 +212,16 @@ export class HTMLReporter implements ReporterPlugin {
   private formatDuration(ms: number): string {
     if (ms < 1000) return `${ms}ms`;
     return `${(ms / 1000).toFixed(1)}s`;
+  }
+
+  private escapeHTML(str: string): string {
+    const htmlEscapeMap: { [key: string]: string } = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    };
+    return str.replace(/[&<>"']/g, char => htmlEscapeMap[char]);
   }
 }
