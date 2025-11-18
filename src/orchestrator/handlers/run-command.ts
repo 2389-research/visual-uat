@@ -9,6 +9,7 @@ import { TestSpec, CodebaseContext } from '../../types/plugins';
 import { ExecutionState, ExecutionContext, ExecutionScope } from './execution-states';
 import { WorktreeManager } from '../services/worktree-manager';
 import { TestRunner } from '../services/test-runner';
+import { ResultStore } from '../services/result-store';
 import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -20,6 +21,7 @@ export interface GenerationResult {
 
 export class RunCommandHandler {
   private changeDetector: ChangeDetector;
+  private resultStore: ResultStore;
 
   constructor(
     private config: Config,
@@ -28,6 +30,7 @@ export class RunCommandHandler {
   ) {
     const manifest = new SpecManifest(projectRoot);
     this.changeDetector = new ChangeDetector(config, manifest, projectRoot);
+    this.resultStore = new ResultStore(projectRoot);
   }
 
   async determineScope(options: RunOptions): Promise<ExecutionScope> {
@@ -383,6 +386,38 @@ export class RunCommandHandler {
     } catch (error) {
       console.error('Comparison and evaluation failed:', error);
       return 'FAILED';
+    }
+  }
+
+  private async handleStoreResults(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      await this.resultStore.saveRunResult(context.runResult!);
+      console.log('Results saved');
+      return 'CLEANUP';
+    } catch (error) {
+      console.error('Failed to store results:', error);
+      return 'FAILED';
+    }
+  }
+
+  private async handleCleanup(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      if (!context.keepWorktrees) {
+        const worktreeManager = new WorktreeManager(this.projectRoot);
+        worktreeManager.cleanup();
+        console.log('Worktrees cleaned up');
+      } else {
+        console.log('Keeping worktrees for debugging');
+      }
+      return 'COMPLETE';
+    } catch (error) {
+      console.warn('Cleanup failed:', error);
+      // Don't fail the whole run if cleanup fails
+      return 'COMPLETE';
     }
   }
 

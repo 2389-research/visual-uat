@@ -813,3 +813,174 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
     expect(context.runResult?.tests[0].error).toContain('No baseline available');
   });
 });
+
+describe('RunCommandHandler.handleStoreResults', () => {
+  let config: Config;
+  let mockPlugins: LoadedPlugins;
+
+  beforeEach(() => {
+    config = {
+      baseBranch: 'main',
+      specsDir: './tests',
+      generatedDir: './tests/generated',
+      plugins: {
+        testGenerator: '@visual-uat/stub-generator',
+        targetRunner: '@visual-uat/playwright-runner',
+        differ: '@visual-uat/pixelmatch-differ',
+        evaluator: '@visual-uat/claude-evaluator'
+      }
+    } as Config;
+
+    mockPlugins = {
+      testGenerator: { generate: jest.fn() } as any,
+      targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
+      differ: { compare: jest.fn() } as any,
+      evaluator: { evaluate: jest.fn() } as any
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it('should save results and transition to CLEANUP', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    // Mock the resultStore
+    const mockSave = jest.fn().mockResolvedValue(undefined);
+    (handler as any).resultStore = { saveRunResult: mockSave };
+
+    const context: ExecutionContext = {
+      scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
+      worktrees: { base: '/base', current: '/current' },
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: {
+        timestamp: 1234567890,
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: config,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      },
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleStoreResults(context);
+
+    expect(nextState).toBe('CLEANUP');
+    expect(mockSave).toHaveBeenCalledWith(context.runResult);
+  });
+});
+
+describe('RunCommandHandler.handleCleanup', () => {
+  let config: Config;
+  let mockPlugins: LoadedPlugins;
+
+  beforeEach(() => {
+    config = {
+      baseBranch: 'main',
+      specsDir: './tests',
+      generatedDir: './tests/generated',
+      plugins: {
+        testGenerator: '@visual-uat/stub-generator',
+        targetRunner: '@visual-uat/playwright-runner',
+        differ: '@visual-uat/pixelmatch-differ',
+        evaluator: '@visual-uat/claude-evaluator'
+      }
+    } as Config;
+
+    mockPlugins = {
+      testGenerator: { generate: jest.fn() } as any,
+      targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
+      differ: { compare: jest.fn() } as any,
+      evaluator: { evaluate: jest.fn() } as any
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it('should cleanup worktrees and transition to COMPLETE', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    const mockCleanup = jest.fn();
+    (WorktreeManager as jest.Mock).mockImplementation(() => ({
+      cleanup: mockCleanup
+    }));
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+    const context: ExecutionContext = {
+      scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
+      worktrees: { base: '/base', current: '/current' },
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleCleanup(context);
+
+    expect(nextState).toBe('COMPLETE');
+    expect(mockCleanup).toHaveBeenCalled();
+  });
+
+  it('should skip cleanup if keepWorktrees flag set', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    const mockCleanup = jest.fn();
+    (WorktreeManager as jest.Mock).mockImplementation(() => ({
+      cleanup: mockCleanup
+    }));
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+    const context: ExecutionContext = {
+      scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
+      worktrees: { base: '/base', current: '/current' },
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: null,
+      keepWorktrees: true
+    };
+
+    const nextState = await (handler as any).handleCleanup(context);
+
+    expect(nextState).toBe('COMPLETE');
+    expect(mockCleanup).not.toHaveBeenCalled();
+  });
+});
