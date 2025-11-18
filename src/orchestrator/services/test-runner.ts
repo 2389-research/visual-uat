@@ -10,7 +10,7 @@ export class TestRunner {
     private screenshotDir: string
   ) {}
 
-  async runTest(testPath: string): Promise<RawTestResult> {
+  runTest(testPath: string): RawTestResult {
     const result = spawnSync(
       'npx',
       ['playwright', 'test', testPath, '--reporter=json'],
@@ -35,9 +35,7 @@ export class TestRunner {
     }
 
     if (result.status !== 0) {
-      const errorMessage = result.stderr
-        ? (typeof result.stderr === 'string' ? result.stderr : String(result.stderr))
-        : 'Test execution failed';
+      const errorMessage = result.stderr || 'Test execution failed';
 
       return {
         testPath,

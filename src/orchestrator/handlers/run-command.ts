@@ -156,7 +156,7 @@ export class RunCommandHandler {
         );
 
         console.log(`Running base test: ${baseName}`);
-        const result = await runner.runTest(testPath);
+        const result = runner.runTest(testPath);
 
         context.baseResults.set(specPath, result);
 
@@ -193,7 +193,7 @@ export class RunCommandHandler {
         );
 
         console.log(`Running current test: ${baseName}`);
-        const result = await runner.runTest(testPath);
+        const result = runner.runTest(testPath);
 
         context.currentResults.set(specPath, result);
 

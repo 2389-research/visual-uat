@@ -2,6 +2,7 @@
 // ABOUTME: Provides screenshotCheckpoint() for capturing screenshots at specific test points.
 
 import * as path from 'path';
+import type { Page } from 'playwright';
 
 /**
  * Capture a screenshot at a named checkpoint during test execution.
@@ -11,7 +12,7 @@ import * as path from 'path';
  * @param name - Checkpoint name (becomes filename)
  */
 export async function screenshotCheckpoint(
-  page: { screenshot: (options: any) => Promise<void> },
+  page: Page,
   name: string
 ): Promise<void> {
   const screenshotDir = process.env.SCREENSHOT_DIR;

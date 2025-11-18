@@ -267,6 +267,7 @@ describe('RunCommandHandler.handleSetup', () => {
     const mockWriteFileSync = fs.writeFileSync as jest.MockedFunction<typeof fs.writeFileSync>;
     const mockStatSync = fs.statSync as jest.MockedFunction<typeof fs.statSync>;
     const mockExecSync = child_process.execSync as jest.MockedFunction<typeof child_process.execSync>;
+    const mockSpawnSync = child_process.spawnSync as jest.MockedFunction<typeof child_process.spawnSync>;
 
     // Mock for SpecManifest constructor
     mockExistsSync.mockReturnValue(false);
@@ -282,6 +283,14 @@ describe('RunCommandHandler.handleSetup', () => {
     // Mock for change detector
     mockReaddirSync.mockReturnValue(['test1.md'] as any);
     mockStatSync.mockReturnValue({ mtimeMs: 123456789 } as any);
+
+    // Mock for git diff (used by ChangeDetector)
+    mockSpawnSync.mockReturnValue({
+      status: 0,
+      stdout: '',
+      stderr: '',
+      error: undefined
+    } as any);
 
     // Mock for git branch --show-current
     mockExecSync.mockReturnValue('feature/test-branch' as any);
@@ -367,7 +376,7 @@ describe('RunCommandHandler.handleExecuteBase', () => {
       return 'Test content';
     });
 
-    const mockRunTest = jest.fn().mockResolvedValue({
+    const mockRunTest = jest.fn().mockReturnValue({
       testPath: 'tests/generated/login.spec.ts',
       status: 'passed',
       duration: 1500,
@@ -418,7 +427,7 @@ describe('RunCommandHandler.handleExecuteBase', () => {
       return 'Test content';
     });
 
-    const mockRunTest = jest.fn().mockResolvedValue({
+    const mockRunTest = jest.fn().mockReturnValue({
       testPath: 'tests/generated/broken.spec.ts',
       status: 'errored',
       duration: 0,
@@ -498,7 +507,7 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       return 'Test content';
     });
 
-    const mockRunTest = jest.fn().mockResolvedValue({
+    const mockRunTest = jest.fn().mockReturnValue({
       testPath: 'tests/generated/login.spec.ts',
       status: 'passed',
       duration: 1500,
@@ -556,7 +565,7 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       return 'Test content';
     });
 
-    const mockRunTest = jest.fn().mockResolvedValue({
+    const mockRunTest = jest.fn().mockReturnValue({
       testPath: 'tests/generated/broken.spec.ts',
       status: 'errored',
       duration: 0,

@@ -16,15 +16,15 @@ describe('TestRunner', () => {
     jest.clearAllMocks();
   });
 
-  it('should run test and return result on success', async () => {
+  it('should run test and return result on success', () => {
     mockSpawnSync.mockReturnValueOnce({
       status: 0,
-      stdout: Buffer.from(''),
-      stderr: Buffer.from(''),
+      stdout: '',
+      stderr: '',
       error: undefined
     } as any);
 
-    const result = await runner.runTest('tests/generated/login.spec.ts');
+    const result = runner.runTest('tests/generated/login.spec.ts');
 
     expect(result.status).toBe('passed');
     expect(result.testPath).toBe('tests/generated/login.spec.ts');
@@ -40,29 +40,29 @@ describe('TestRunner', () => {
     );
   });
 
-  it('should return errored result on test failure', async () => {
+  it('should return errored result on test failure', () => {
     mockSpawnSync.mockReturnValueOnce({
       status: 1,
-      stdout: Buffer.from(''),
-      stderr: Buffer.from('Test failed'),
+      stdout: '',
+      stderr: 'Test failed',
       error: undefined
     } as any);
 
-    const result = await runner.runTest('tests/generated/broken.spec.ts');
+    const result = runner.runTest('tests/generated/broken.spec.ts');
 
     expect(result.status).toBe('errored');
     expect(result.error).toBe('Test failed');
   });
 
-  it('should return errored result on spawn error', async () => {
+  it('should return errored result on spawn error', () => {
     mockSpawnSync.mockReturnValueOnce({
       status: null,
-      stdout: Buffer.from(''),
-      stderr: Buffer.from(''),
+      stdout: '',
+      stderr: '',
       error: new Error('Command not found')
     } as any);
 
-    const result = await runner.runTest('tests/generated/test.spec.ts');
+    const result = runner.runTest('tests/generated/test.spec.ts');
 
     expect(result.status).toBe('errored');
     expect(result.error).toContain('Command not found');

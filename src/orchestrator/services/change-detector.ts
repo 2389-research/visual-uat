@@ -1,7 +1,7 @@
 // ABOUTME: Determines whether to run full test suite, incremental tests, or skip based on git changes and spec manifest.
 // ABOUTME: Combines git diff detection (codebase changes) with manifest hashing (spec changes).
 
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import { readdirSync } from 'fs';
 import * as path from 'path';
 import { Config } from '../../types/config';
@@ -58,20 +58,24 @@ export class ChangeDetector {
   }
 
   private hasCodebaseChanges(baseBranch: string): boolean {
-    try {
-      execSync(
-        `git diff --quiet ${baseBranch}..HEAD -- src/`,
-        { cwd: this.projectRoot, stdio: 'pipe' }
-      );
-      return false; // No differences (exit code 0)
-    } catch (error: any) {
-      // Exit code 1 means differences exist, which is expected
-      if (error.status === 1) {
-        return true;
-      }
-      // Any other error should be thrown
-      throw error;
+    const result = spawnSync(
+      'git',
+      ['diff', '--quiet', `${baseBranch}..HEAD`, '--', 'src/'],
+      { cwd: this.projectRoot, stdio: 'pipe' }
+    );
+
+    // Exit code 0 means no differences
+    if (result.status === 0) {
+      return false;
     }
+
+    // Exit code 1 means differences exist
+    if (result.status === 1) {
+      return true;
+    }
+
+    // Any other status is an error
+    throw new Error(`Git diff failed with status ${result.status}: ${result.stderr}`);
   }
 
   private findSpecFiles(): string[] {
