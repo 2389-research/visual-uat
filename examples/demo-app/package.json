@@ -1,0 +1,12 @@
+{
+  "name": "visual-uat-demo-app",
+  "version": "1.0.0",
+  "description": "Simple demo app for testing visual-uat",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

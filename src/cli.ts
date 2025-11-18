@@ -44,6 +44,7 @@ export function createCLI(): Command {
     .option('--all', 'Force run all tests (ignore change detection)')
     .option('--base <branch>', 'Base branch to compare against')
     .option('--fail-fast', 'Stop on first error')
+    .option('--keep-worktrees', 'Keep worktrees after execution for debugging')
     .action(async (options) => {
       try {
         const projectRoot = process.cwd();
@@ -55,7 +56,8 @@ export function createCLI(): Command {
         const exitCode = await handler.execute({
           all: options.all,
           baseBranch: options.base,
-          failFast: options.failFast
+          failFast: options.failFast,
+          keepWorktrees: options.keepWorktrees
         });
         process.exit(exitCode);
       } catch (error) {

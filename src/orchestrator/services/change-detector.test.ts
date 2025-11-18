@@ -2,13 +2,13 @@
 import { ChangeDetector } from './change-detector';
 import { Config } from '../../types/config';
 import { SpecManifest } from '../../specs/manifest';
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 
 jest.mock('child_process');
 jest.mock('fs');
 
-const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+const mockSpawnSync = spawnSync as jest.MockedFunction<typeof spawnSync>;
 const mockReaddirSync = fs.readdirSync as jest.MockedFunction<typeof fs.readdirSync>;
 
 describe('ChangeDetector', () => {
@@ -43,28 +43,35 @@ describe('ChangeDetector', () => {
     });
 
     it('should return "full" when codebase changed', () => {
-      const error: any = new Error('exit code 1');
-      error.status = 1;
-      mockExecSync.mockImplementationOnce(() => {
-        throw error; // git diff returns exit code 1 (differences exist)
-      });
+      mockSpawnSync.mockReturnValueOnce({
+        status: 1, // git diff returns exit code 1 (differences exist)
+        stdout: Buffer.from(''),
+        stderr: Buffer.from(''),
+        error: undefined
+      } as any);
 
       const scope = detector.determineScope({ all: false });
       expect(scope).toBe('full');
     });
 
     it('should throw error when git command fails with non-1 exit code', () => {
-      const error: any = new Error('fatal: bad revision');
-      error.status = 128; // git error for invalid branch
-      mockExecSync.mockImplementationOnce(() => {
-        throw error;
-      });
+      mockSpawnSync.mockReturnValueOnce({
+        status: 128, // git error for invalid branch
+        stdout: Buffer.from(''),
+        stderr: Buffer.from('fatal: bad revision'),
+        error: undefined
+      } as any);
 
       expect(() => detector.determineScope({ all: false })).toThrow('fatal: bad revision');
     });
 
     it('should return "incremental" when specs changed but not codebase', () => {
-      mockExecSync.mockReturnValueOnce(Buffer.from('')); // git diff returns 0
+      mockSpawnSync.mockReturnValueOnce({
+        status: 0, // git diff returns 0 (no differences)
+        stdout: Buffer.from(''),
+        stderr: Buffer.from(''),
+        error: undefined
+      } as any);
 
       jest.spyOn(manifest, 'detectChanges').mockReturnValue({
         new: ['tests/new-test.md'],
@@ -77,7 +84,12 @@ describe('ChangeDetector', () => {
     });
 
     it('should return "skip" when nothing changed', () => {
-      mockExecSync.mockReturnValueOnce(Buffer.from(''));
+      mockSpawnSync.mockReturnValueOnce({
+        status: 0, // git diff returns 0 (no differences)
+        stdout: Buffer.from(''),
+        stderr: Buffer.from(''),
+        error: undefined
+      } as any);
 
       jest.spyOn(manifest, 'detectChanges').mockReturnValue({
         new: [],
@@ -90,7 +102,12 @@ describe('ChangeDetector', () => {
     });
 
     it('should use custom base branch from options', () => {
-      mockExecSync.mockReturnValueOnce(Buffer.from(''));
+      mockSpawnSync.mockReturnValueOnce({
+        status: 0,
+        stdout: Buffer.from(''),
+        stderr: Buffer.from(''),
+        error: undefined
+      } as any);
       jest.spyOn(manifest, 'detectChanges').mockReturnValue({
         new: [],
         modified: [],
@@ -99,8 +116,9 @@ describe('ChangeDetector', () => {
 
       detector.determineScope({ all: false, baseBranch: 'develop' });
 
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('develop..HEAD'),
+      expect(mockSpawnSync).toHaveBeenCalledWith(
+        'git',
+        expect.arrayContaining(['diff', '--quiet', 'develop..HEAD', '--', 'src/']),
         expect.any(Object)
       );
     });

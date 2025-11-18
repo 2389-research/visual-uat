@@ -6,6 +6,10 @@
   "bin": {
     "visual-uat": "./dist/cli.js"
   },
+  "exports": {
+    ".": "./dist/index.js",
+    "./playwright": "./dist/playwright/helpers.js"
+  },
   "scripts": {
     "build": "tsc",
     "test": "jest",

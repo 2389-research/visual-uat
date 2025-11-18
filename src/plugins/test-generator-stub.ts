@@ -33,7 +33,7 @@ export class StubTestGenerator implements TestGenerator {
     const steps = content.split('\n').filter(line => line.trim().length > 0);
 
     let code = `import { test, expect, Page } from '@playwright/test';
-import { screenshotCheckpoint } from '@visual-uat/playwright-helpers';
+import { screenshotCheckpoint } from 'visual-uat/playwright';
 
 test('${steps[0] || 'visual test'}', async ({ page }) => {
   // Navigate to base URL (from config)
