@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual UAT Demo App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Visual UAT Demo App</h1>
+      <p class="subtitle">A simple app for testing visual acceptance</p>
+    </header>
+
+    <nav>
+      <button onclick="showView('home')" class="nav-btn active" data-view="home">Home</button>
+      <button onclick="showView('form')" class="nav-btn" data-view="form">Contact Form</button>
+      <button onclick="showView('dashboard')" class="nav-btn" data-view="dashboard">Dashboard</button>
+    </nav>
+
+    <!-- Home View -->
+    <div id="home-view" class="view active">
+      <h2>Welcome</h2>
+      <div class="card">
+        <h3>About This App</h3>
+        <p>This is a simple demo application for testing <strong>visual-uat</strong>.</p>
+        <p>Use the navigation above to explore different views.</p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📸</div>
+          <h4>Screenshot Testing</h4>
+          <p>Capture visual states at key checkpoints</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h4>Visual Comparison</h4>
+          <p>Compare screenshots across branches</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h4>LLM Evaluation</h4>
+          <p>AI-powered difference analysis</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form View -->
+    <div id="form-view" class="view">
+      <h2>Contact Form</h2>
+      <div class="card">
+        <form id="contact-form">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required placeholder="Enter your name">
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="your@email.com">
+          </div>
+
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="4" placeholder="Your message here..."></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary">Submit</button>
+        </form>
+
+        <div id="form-result" class="form-result hidden"></div>
+      </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="view">
+      <h2>Dashboard</h2>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">127</div>
+          <div class="stat-label">Total Tests</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">98%</div>
+          <div class="stat-label">Pass Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">3</div>
+          <div class="stat-label">Pending Review</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Recent Activity</h3>
+        <ul class="activity-list">
+          <li>
+            <span class="activity-icon success">✓</span>
+            <span class="activity-text">Login flow test passed</span>
+            <span class="activity-time">2 min ago</span>
+          </li>
+          <li>
+            <span class="activity-icon success">✓</span>
+            <span class="activity-text">Dashboard layout test passed</span>
+            <span class="activity-time">5 min ago</span>
+          </li>
+          <li>
+            <span class="activity-icon warning">⚠</span>
+            <span class="activity-text">Button color change needs review</span>
+            <span class="activity-time">12 min ago</span>
+          </li>
+          <li>
+            <span class="activity-icon success">✓</span>
+            <span class="activity-text">Form validation test passed</span>
+            <span class="activity-time">18 min ago</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <footer>
+      <p>Visual UAT Demo App | Built for testing visual acceptance workflows</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
