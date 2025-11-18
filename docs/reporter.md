@@ -154,9 +154,9 @@ Three viewing modes for comparing baseline vs current screenshots:
 - Changed pixels highlighted in red
 - Unchanged pixels shown in gray
 
-**Side-by-Side Mode:**
-- Baseline and current screenshots side by side
-- Useful for comparing overall layout
+**Side-by-Side Mode (Coming Soon):**
+- Planned feature: Baseline and current screenshots side by side
+- Will be useful for comparing overall layout
 
 ### Report File Location
 
