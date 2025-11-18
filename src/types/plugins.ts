@@ -1,6 +1,8 @@
 // ABOUTME: Plugin interface definitions for extensible visual UAT system
 // ABOUTME: Defines contracts for target runners, test generators, differs, and evaluators
 
+import { RunResult } from '../orchestrator/types/results';
+
 export interface TargetInfo {
   baseUrl: string;
   environment: Record<string, string>;
@@ -86,5 +88,5 @@ export interface ReporterOptions {
 }
 
 export interface ReporterPlugin {
-  generate(result: import('../orchestrator/types/results').RunResult, options: ReporterOptions): Promise<void>;
+  generate(result: RunResult, options: ReporterOptions): Promise<void>;
 }
