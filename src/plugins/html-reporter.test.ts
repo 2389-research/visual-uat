@@ -107,10 +107,17 @@ describe('HTMLReporter', () => {
     const htmlFile = path.join(testOutputDir, files[0]);
     const content = fs.readFileSync(htmlFile, 'utf-8');
 
-    expect(content).toContain('5'); // passed count
-    expect(content).toContain('2'); // needs review count
-    expect(content).toContain('2'); // failed count
-    expect(content).toContain('1'); // errored count
+    // Verify counts are in proper HTML context
+    expect(content).toContain('<div class="count">5</div>');
+    expect(content).toContain('<div class="count">2</div>');
+    expect(content).toContain('<div class="count">1</div>');
+
+    // Verify labels are present
+    expect(content).toContain('<div class="label">Passed</div>');
+    expect(content).toContain('<div class="label">Needs Review</div>');
+    expect(content).toContain('<div class="label">Failed</div>');
+    expect(content).toContain('<div class="label">Errored</div>');
+
     expect(content).toContain('class="summary-box');
   });
 });
