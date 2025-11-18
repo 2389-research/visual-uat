@@ -422,7 +422,7 @@ export class RunCommandHandler {
         verbosity: this.getVerbosity(),
         outputDir: path.join(this.projectRoot, '.visual-uat/reports'),
         embedImages: false,
-        autoOpen: false
+        autoOpen: this.runOptions?.open || false
       };
 
       // Call terminal reporter first for immediate feedback
@@ -432,11 +432,13 @@ export class RunCommandHandler {
         console.error('Terminal reporter failed:', error);
       }
 
-      // Call HTML reporter second
-      try {
-        await this.plugins.htmlReporter.generate(context.runResult!, reporterOptions);
-      } catch (error) {
-        console.error('HTML reporter failed:', error);
+      // Call HTML reporter second (unless --no-html flag is set)
+      if (!this.runOptions?.noHtml) {
+        try {
+          await this.plugins.htmlReporter.generate(context.runResult!, reporterOptions);
+        } catch (error) {
+          console.error('HTML reporter failed:', error);
+        }
       }
 
       return 'CLEANUP';

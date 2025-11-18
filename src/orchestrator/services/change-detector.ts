@@ -16,6 +16,8 @@ export interface RunOptions {
   keepWorktrees?: boolean;
   quiet?: boolean;
   verbose?: boolean;
+  noHtml?: boolean;
+  open?: boolean;
 }
 
 export class ChangeDetector {
