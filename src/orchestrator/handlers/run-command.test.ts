@@ -1,9 +1,14 @@
 import { RunCommandHandler } from './run-command';
 import { Config } from '../../types/config';
 import { LoadedPlugins } from '../services/plugin-registry';
+import { ExecutionContext } from './execution-states';
+import { WorktreeManager } from '../services/worktree-manager';
 import * as fs from 'fs';
+import * as child_process from 'child_process';
 
 jest.mock('fs');
+jest.mock('../services/worktree-manager');
+jest.mock('child_process');
 
 describe('RunCommandHandler - Setup Phase', () => {
   let config: Config;
@@ -49,6 +54,9 @@ describe('RunCommandHandler - Setup Phase', () => {
   });
 
   it('should determine execution scope on initialize', async () => {
+    const mockReaddirSync = fs.readdirSync as jest.MockedFunction<typeof fs.readdirSync>;
+    mockReaddirSync.mockReturnValue(['test1.md'] as any);
+
     const handler = new RunCommandHandler(
       config,
       mockPlugins,
@@ -56,7 +64,9 @@ describe('RunCommandHandler - Setup Phase', () => {
     );
 
     const scope = await handler.determineScope({ all: true });
-    expect(scope).toBe('full');
+    expect(scope.type).toBe('full');
+    expect(scope.baseBranch).toBe('main');
+    expect(scope.specsToGenerate).toBeDefined();
   });
 });
 
@@ -121,7 +131,12 @@ describe('RunCommandHandler - Generation Phase', () => {
     // Now set up mocks for the actual test run
     mockExistsSync.mockReturnValue(true);
 
-    const results = await handler.generateTests('full');
+    const scope = {
+      type: 'full' as const,
+      baseBranch: 'main',
+      specsToGenerate: ['./tests/test1.md', './tests/test2.md']
+    };
+    const results = await handler.generateTests(scope);
 
     expect(mockPlugins.testGenerator.generate).toHaveBeenCalledTimes(2);
     expect(results.success).toHaveLength(2);
@@ -164,7 +179,12 @@ describe('RunCommandHandler - Generation Phase', () => {
     // Now set up mocks for the actual test run
     mockExistsSync.mockReturnValue(true);
 
-    const results = await handler.generateTests('full', { failFast: false });
+    const scope = {
+      type: 'full' as const,
+      baseBranch: 'main',
+      specsToGenerate: ['./tests/test1.md', './tests/test2.md']
+    };
+    const results = await handler.generateTests(scope, { failFast: false });
 
     expect(mockPlugins.testGenerator.generate).toHaveBeenCalledTimes(2);
     expect(results.success).toHaveLength(1);
@@ -200,7 +220,105 @@ describe('RunCommandHandler - Generation Phase', () => {
     // Now set up mocks for the actual test run
     mockExistsSync.mockReturnValue(true);
 
-    await expect(handler.generateTests('full', { failFast: true }))
+    const scope = {
+      type: 'full' as const,
+      baseBranch: 'main',
+      specsToGenerate: ['./tests/test1.md', './tests/test2.md']
+    };
+    await expect(handler.generateTests(scope, { failFast: true }))
       .rejects.toThrow('LLM timeout');
+  });
+});
+
+describe('RunCommandHandler.handleSetup', () => {
+  let config: Config;
+  let mockPlugins: LoadedPlugins;
+
+  beforeEach(() => {
+    config = {
+      baseBranch: 'main',
+      specsDir: './tests',
+      generatedDir: './tests/generated',
+      plugins: {
+        testGenerator: '@visual-uat/stub-generator',
+        targetRunner: '@visual-uat/playwright-runner',
+        differ: '@visual-uat/pixelmatch-differ',
+        evaluator: '@visual-uat/claude-evaluator'
+      }
+    } as Config;
+
+    mockPlugins = {
+      testGenerator: { generate: jest.fn() } as any,
+      targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
+      differ: { compare: jest.fn() } as any,
+      evaluator: { evaluate: jest.fn() } as any
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it('should transition to EXECUTE_BASE on success', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReaddirSync = fs.readdirSync as jest.MockedFunction<typeof fs.readdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+    const mockWriteFileSync = fs.writeFileSync as jest.MockedFunction<typeof fs.writeFileSync>;
+    const mockStatSync = fs.statSync as jest.MockedFunction<typeof fs.statSync>;
+    const mockExecSync = child_process.execSync as jest.MockedFunction<typeof child_process.execSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+    mockWriteFileSync.mockReturnValue(undefined);
+
+    // Mock for change detector
+    mockReaddirSync.mockReturnValue(['test1.md'] as any);
+    mockStatSync.mockReturnValue({ mtimeMs: 123456789 } as any);
+
+    // Mock for git branch --show-current
+    mockExecSync.mockReturnValue('feature/test-branch' as any);
+
+    // Mock WorktreeManager
+    const mockCreateWorktrees = jest.fn().mockResolvedValue({
+      base: '/fake/project/.worktrees/base',
+      current: '/fake/project/.worktrees/current'
+    });
+    (WorktreeManager as jest.Mock).mockImplementation(() => ({
+      createWorktrees: mockCreateWorktrees
+    }));
+
+    // Mock test generator
+    mockPlugins.testGenerator.generate = jest.fn().mockResolvedValue({
+      code: 'test code',
+      language: 'typescript',
+      checkpoints: ['checkpoint1']
+    });
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    // Set up mocks for the actual test run
+    mockExistsSync.mockReturnValue(true);
+
+    // We need to access the private method for testing
+    const context: ExecutionContext = {
+      scope: null,
+      worktrees: null,
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleSetup(context, { force: true });
+
+    expect(nextState).toBe('EXECUTE_BASE');
+    expect(context.worktrees).not.toBeNull();
+    expect(mockCreateWorktrees).toHaveBeenCalled();
   });
 });

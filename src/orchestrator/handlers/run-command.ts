@@ -3,9 +3,12 @@
 
 import { Config } from '../../types/config';
 import { LoadedPlugins } from '../services/plugin-registry';
-import { ChangeDetector, ExecutionScope, RunOptions } from '../services/change-detector';
+import { ChangeDetector, RunOptions } from '../services/change-detector';
 import { SpecManifest } from '../../specs/manifest';
 import { TestSpec, CodebaseContext } from '../../types/plugins';
+import { ExecutionState, ExecutionContext, ExecutionScope } from './execution-states';
+import { WorktreeManager } from '../services/worktree-manager';
+import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -27,14 +30,22 @@ export class RunCommandHandler {
   }
 
   async determineScope(options: RunOptions): Promise<ExecutionScope> {
-    return this.changeDetector.determineScope(options);
+    const scopeType = this.changeDetector.determineScope(options);
+    const baseBranch = options.baseBranch || this.config.baseBranch;
+    const specsToGenerate = this.changeDetector.getSpecsToGenerate(scopeType);
+
+    return {
+      type: scopeType,
+      baseBranch,
+      specsToGenerate
+    };
   }
 
   async generateTests(
     scope: ExecutionScope,
     options: { failFast?: boolean } = {}
   ): Promise<GenerationResult> {
-    const specsToGenerate = this.changeDetector.getSpecsToGenerate(scope);
+    const specsToGenerate = scope.specsToGenerate;
     const results: GenerationResult = { success: [], failed: [] };
     const manifest = new SpecManifest(this.projectRoot);
 
@@ -82,6 +93,42 @@ export class RunCommandHandler {
 
     fs.writeFileSync(outputPath, generated.code);
     return outputPath;
+  }
+
+  private async handleSetup(
+    context: ExecutionContext,
+    options: RunOptions
+  ): Promise<ExecutionState> {
+    try {
+      // Determine scope
+      context.scope = await this.determineScope(options);
+
+      if (context.scope.type === 'skip') {
+        console.log('No changes detected, skipping tests');
+        return 'COMPLETE';
+      }
+
+      // Generate tests
+      await this.generateTests(context.scope);
+
+      // Get current branch
+      const currentBranch = execSync('git branch --show-current', {
+        cwd: this.projectRoot,
+        encoding: 'utf-8'
+      }).trim();
+
+      // Create worktrees
+      const worktreeManager = new WorktreeManager(this.projectRoot);
+      context.worktrees = await worktreeManager.createWorktrees(
+        context.scope.baseBranch,
+        currentBranch
+      );
+
+      return 'EXECUTE_BASE';
+    } catch (error) {
+      console.error('Setup failed:', error);
+      return 'FAILED';
+    }
   }
 
   async execute(options: RunOptions): Promise<number> {
