@@ -1167,6 +1167,170 @@ describe('RunCommandHandler.handleStoreResults', () => {
       })
     );
   });
+
+  it('should skip HTML reporter when noHtml flag is set', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    // Store runOptions with noHtml flag
+    (handler as any).runOptions = { noHtml: true };
+
+    // Mock the resultStore
+    const mockSave = jest.fn().mockResolvedValue(undefined);
+    (handler as any).resultStore = { saveRunResult: mockSave };
+
+    const context: ExecutionContext = {
+      scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
+      worktrees: { base: '/base', current: '/current' },
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: {
+        runId: 'test999',
+        timestamp: 1234567890,
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: config,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      },
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleStoreResults(context);
+
+    expect(nextState).toBe('CLEANUP');
+    expect(mockPlugins.terminalReporter.generate).toHaveBeenCalled();
+    expect(mockPlugins.htmlReporter.generate).not.toHaveBeenCalled();
+  });
+
+  it('should set autoOpen to true when open flag is set', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    // Store runOptions with open flag
+    (handler as any).runOptions = { open: true };
+
+    // Mock the resultStore
+    const mockSave = jest.fn().mockResolvedValue(undefined);
+    (handler as any).resultStore = { saveRunResult: mockSave };
+
+    const context: ExecutionContext = {
+      scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
+      worktrees: { base: '/base', current: '/current' },
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: {
+        runId: 'test888',
+        timestamp: 1234567890,
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: config,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      },
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleStoreResults(context);
+
+    expect(nextState).toBe('CLEANUP');
+    expect(mockPlugins.terminalReporter.generate).toHaveBeenCalledWith(
+      context.runResult,
+      expect.objectContaining({
+        autoOpen: true
+      })
+    );
+    expect(mockPlugins.htmlReporter.generate).toHaveBeenCalledWith(
+      context.runResult,
+      expect.objectContaining({
+        autoOpen: true
+      })
+    );
+  });
+
+  it('should warn when both quiet and verbose flags are set', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    // Store runOptions with both conflicting flags
+    (handler as any).runOptions = { quiet: true, verbose: true };
+
+    // Mock the resultStore
+    const mockSave = jest.fn().mockResolvedValue(undefined);
+    (handler as any).resultStore = { saveRunResult: mockSave };
+
+    // Spy on console.warn
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+    const context: ExecutionContext = {
+      scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
+      worktrees: { base: '/base', current: '/current' },
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: {
+        runId: 'test777',
+        timestamp: 1234567890,
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: config,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      },
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleStoreResults(context);
+
+    expect(nextState).toBe('CLEANUP');
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Warning: Both --quiet and --verbose flags specified. Using --quiet.');
+    expect(mockPlugins.terminalReporter.generate).toHaveBeenCalledWith(
+      context.runResult,
+      expect.objectContaining({
+        verbosity: 'quiet'
+      })
+    );
+
+    consoleWarnSpy.mockRestore();
+  });
 });
 
 describe('RunCommandHandler.handleCleanup', () => {

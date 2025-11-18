@@ -396,6 +396,10 @@ export class RunCommandHandler {
     if (!this.runOptions) {
       return 'normal';
     }
+    // Warn if both quiet and verbose are specified (conflicting flags)
+    if (this.runOptions.quiet && this.runOptions.verbose) {
+      console.warn('Warning: Both --quiet and --verbose flags specified. Using --quiet.');
+    }
     if (this.runOptions.quiet) {
       return 'quiet';
     }

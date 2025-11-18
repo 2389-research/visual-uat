@@ -64,6 +64,7 @@ export function createCLI(): Command {
           keepWorktrees: options.keepWorktrees,
           quiet: options.quiet,
           verbose: options.verbose,
+          // Commander negates --no-html to options.html = false
           noHtml: options.html === false,
           open: options.open
         });
