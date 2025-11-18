@@ -368,6 +368,7 @@ export class RunCommandHandler {
       }).trim();
 
       context.runResult = {
+        runId: '', // Will be generated in handleStoreResults
         timestamp: Date.now(),
         baseBranch: context.scope!.baseBranch,
         currentBranch: currentBranch,

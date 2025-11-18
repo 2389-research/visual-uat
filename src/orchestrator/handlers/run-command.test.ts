@@ -877,6 +877,7 @@ describe('RunCommandHandler.handleStoreResults', () => {
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
+        runId: 'testrun',
         timestamp: 1234567890,
         baseBranch: 'main',
         currentBranch: 'feature/test',

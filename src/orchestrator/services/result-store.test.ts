@@ -24,6 +24,7 @@ describe('ResultStore', () => {
       mockExistsSync.mockReturnValue(false);
 
       const result: RunResult = {
+        runId: 'test123',
         timestamp: 1731870123,
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -47,6 +48,7 @@ describe('ResultStore', () => {
       mockWriteFileSync.mockImplementation(() => {});
 
       const result: RunResult = {
+        runId: 'test456',
         timestamp: 1731870123,
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -137,6 +139,7 @@ describe('ResultStore', () => {
       mockExistsSync.mockReturnValue(true);
 
       const expectedResult: RunResult = {
+        runId: 'test789',
         timestamp: 1731870123,
         baseBranch: 'main',
         currentBranch: 'feature/test',

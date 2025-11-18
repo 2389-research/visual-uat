@@ -25,6 +25,7 @@ describe('TerminalReporter', () => {
     it('should show only summary in quiet mode', async () => {
       const reporter = new TerminalReporter();
       const result: RunResult = {
+        runId: 'test123',
         timestamp: Date.now(),
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -76,6 +77,7 @@ describe('TerminalReporter', () => {
     it('should show report path if outputDir provided', async () => {
       const reporter = new TerminalReporter();
       const result: RunResult = {
+        runId: 'test456',
         timestamp: 1700000000000,
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -95,6 +97,7 @@ describe('TerminalReporter', () => {
     it('should show test-by-test status in normal mode', async () => {
       const reporter = new TerminalReporter();
       const result: RunResult = {
+        runId: 'test789',
         timestamp: Date.now(),
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -157,6 +160,7 @@ describe('TerminalReporter', () => {
     it('should show detailed information in verbose mode', async () => {
       const reporter = new TerminalReporter();
       const result: RunResult = {
+        runId: 'testabc',
         timestamp: Date.now(),
         baseBranch: 'main',
         currentBranch: 'feature/test',
