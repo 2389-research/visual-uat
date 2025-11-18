@@ -600,3 +600,216 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
     expect(context.currentResults.get('tests/broken.md')?.status).toBe('errored');
   });
 });
+
+describe('RunCommandHandler.handleCompareAndEvaluate', () => {
+  let config: Config;
+  let mockPlugins: LoadedPlugins;
+
+  beforeEach(() => {
+    config = {
+      baseBranch: 'main',
+      specsDir: './tests',
+      generatedDir: './tests/generated',
+      plugins: {
+        testGenerator: '@visual-uat/stub-generator',
+        targetRunner: '@visual-uat/playwright-runner',
+        differ: '@visual-uat/pixelmatch-differ',
+        evaluator: '@visual-uat/claude-evaluator'
+      }
+    } as Config;
+
+    mockPlugins = {
+      testGenerator: { generate: jest.fn() } as any,
+      targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
+      differ: { compare: jest.fn() } as any,
+      evaluator: { evaluate: jest.fn() } as any
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it('should skip evaluation if no pixel differences', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+    const mockExecSync = child_process.execSync as jest.MockedFunction<typeof child_process.execSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test spec content';
+    });
+
+    // Mock for git branch --show-current
+    mockExecSync.mockReturnValue('feature/test-branch' as any);
+
+    const mockCompare = jest.fn().mockResolvedValue({
+      diffImage: Buffer.from(''),
+      pixelDiffPercent: 0,
+      changedRegions: [],
+      identical: true
+    });
+
+    mockPlugins.differ.compare = mockCompare;
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    const context: ExecutionContext = {
+      scope: { type: 'full', baseBranch: 'main', specsToGenerate: ['tests/login.md'] },
+      worktrees: { base: '/base', current: '/current' },
+      baseResults: new Map([
+        ['tests/login.md', {
+          testPath: 'tests/generated/login.spec.ts',
+          status: 'passed',
+          duration: 1400,
+          screenshots: ['initial.png']
+        }]
+      ]),
+      currentResults: new Map([
+        ['tests/login.md', {
+          testPath: 'tests/generated/login.spec.ts',
+          status: 'passed',
+          duration: 1500,
+          screenshots: ['initial.png']
+        }]
+      ]),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleCompareAndEvaluate(context);
+
+    expect(nextState).toBe('STORE_RESULTS');
+    expect(mockCompare).toHaveBeenCalled();
+    // Evaluator should NOT be called for 0% diff
+    expect(mockPlugins.evaluator.evaluate).not.toHaveBeenCalled();
+    expect(context.runResult).not.toBeNull();
+    expect(context.runResult?.tests[0].status).toBe('passed');
+  });
+
+  it('should evaluate differences when pixels changed', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+    const mockExecSync = child_process.execSync as jest.MockedFunction<typeof child_process.execSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test spec content';
+    });
+
+    // Mock for git branch --show-current
+    mockExecSync.mockReturnValue('feature/test-branch' as any);
+
+    const mockCompare = jest.fn().mockResolvedValue({
+      diffImage: Buffer.from('mock-diff-image'),
+      pixelDiffPercent: 2.5,
+      changedRegions: [{ x: 10, y: 20, width: 100, height: 50 }],
+      identical: false
+    });
+    const mockEvaluate = jest.fn().mockResolvedValue({
+      pass: true,
+      confidence: 0.95,
+      reason: 'Expected button color change',
+      needsReview: false
+    });
+
+    mockPlugins.differ.compare = mockCompare;
+    mockPlugins.evaluator.evaluate = mockEvaluate;
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    const context: ExecutionContext = {
+      scope: { type: 'full', baseBranch: 'main', specsToGenerate: ['tests/login.md'] },
+      worktrees: { base: '/base', current: '/current' },
+      baseResults: new Map([
+        ['tests/login.md', {
+          testPath: 'tests/generated/login.spec.ts',
+          status: 'passed',
+          duration: 1400,
+          screenshots: ['initial.png']
+        }]
+      ]),
+      currentResults: new Map([
+        ['tests/login.md', {
+          testPath: 'tests/generated/login.spec.ts',
+          status: 'passed',
+          duration: 1500,
+          screenshots: ['initial.png']
+        }]
+      ]),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleCompareAndEvaluate(context);
+
+    expect(nextState).toBe('STORE_RESULTS');
+    expect(mockEvaluate).toHaveBeenCalled();
+    expect(context.runResult).not.toBeNull();
+    expect(context.runResult?.tests[0].status).toBe('passed');
+  });
+
+  it('should handle missing baseline gracefully', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+    const mockExecSync = child_process.execSync as jest.MockedFunction<typeof child_process.execSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test spec content';
+    });
+
+    // Mock for git branch --show-current
+    mockExecSync.mockReturnValue('feature/test-branch' as any);
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    const context: ExecutionContext = {
+      scope: { type: 'full', baseBranch: 'main', specsToGenerate: ['tests/broken.md'] },
+      worktrees: { base: '/base', current: '/current' },
+      baseResults: new Map([
+        ['tests/broken.md', {
+          testPath: 'tests/generated/broken.spec.ts',
+          status: 'errored',
+          duration: 0,
+          screenshots: [],
+          error: 'Test crashed'
+        }]
+      ]),
+      currentResults: new Map([
+        ['tests/broken.md', {
+          testPath: 'tests/generated/broken.spec.ts',
+          status: 'passed',
+          duration: 1500,
+          screenshots: ['initial.png']
+        }]
+      ]),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleCompareAndEvaluate(context);
+
+    expect(nextState).toBe('STORE_RESULTS');
+    expect(context.runResult).not.toBeNull();
+    // Should create TestResult with baselineAvailable: false
+    expect(context.runResult?.tests[0].status).toBe('errored');
+    expect(context.runResult?.tests[0].error).toContain('No baseline available');
+  });
+});

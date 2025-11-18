@@ -28,6 +28,7 @@ export interface TestResult {
   checkpoints: CheckpointResult[];
   error?: string;
   duration: number;
+  baselineAvailable?: boolean;
 }
 
 export interface RunResult {

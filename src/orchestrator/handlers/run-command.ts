@@ -206,6 +206,186 @@ export class RunCommandHandler {
     }
   }
 
+  private async handleCompareAndEvaluate(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      const tests: import('../types/results').TestResult[] = [];
+
+      for (const specPath of context.scope!.specsToGenerate) {
+        const baseResult = context.baseResults.get(specPath);
+        const currentResult = context.currentResults.get(specPath);
+
+        if (!baseResult || !currentResult) {
+          continue;
+        }
+
+        const baseName = path.basename(specPath, '.md');
+        const generatedPath = path.join(
+          this.config.generatedDir,
+          `${baseName}.spec.ts`
+        );
+
+        // If base errored, mark as no baseline
+        if (baseResult.status === 'errored') {
+          tests.push({
+            specPath,
+            generatedPath,
+            status: 'errored',
+            checkpoints: [],
+            duration: currentResult.duration,
+            error: `No baseline available: ${baseResult.error}`,
+            baselineAvailable: false
+          });
+          continue;
+        }
+
+        // If current errored, mark as errored
+        if (currentResult.status === 'errored') {
+          tests.push({
+            specPath,
+            generatedPath,
+            status: 'errored',
+            checkpoints: [],
+            duration: currentResult.duration,
+            error: currentResult.error,
+            baselineAvailable: true
+          });
+          continue;
+        }
+
+        // Compare screenshots for each checkpoint
+        const checkpoints: import('../types/results').CheckpointResult[] = [];
+        const specContent = fs.readFileSync(specPath, 'utf-8');
+
+        for (let i = 0; i < baseResult.screenshots.length; i++) {
+          const checkpointName = baseResult.screenshots[i];
+          const baseImagePath = path.join(
+            this.projectRoot,
+            '.visual-uat/screenshots/base',
+            checkpointName
+          );
+          const currentImagePath = path.join(
+            this.projectRoot,
+            '.visual-uat/screenshots/current',
+            checkpointName
+          );
+
+          // Load images as Screenshot objects
+          const baseImageData = fs.readFileSync(baseImagePath);
+          const currentImageData = fs.readFileSync(currentImagePath);
+
+          const baseScreenshot: import('../../types/plugins').Screenshot = {
+            data: baseImageData,
+            width: 0,
+            height: 0,
+            checkpoint: path.basename(checkpointName, '.png')
+          };
+
+          const currentScreenshot: import('../../types/plugins').Screenshot = {
+            data: currentImageData,
+            width: 0,
+            height: 0,
+            checkpoint: path.basename(checkpointName, '.png')
+          };
+
+          const diffResult = await this.plugins.differ.compare(
+            baseScreenshot,
+            currentScreenshot
+          );
+
+          let evaluation;
+
+          // Only evaluate if there are differences
+          if (diffResult.pixelDiffPercent > 0) {
+            evaluation = await this.plugins.evaluator.evaluate({
+              intent: specContent,
+              checkpoint: path.basename(checkpointName, '.png'),
+              diffResult: diffResult,
+              baselineImage: baseImageData,
+              currentImage: currentImageData
+            });
+          } else {
+            // No differences, auto-pass
+            evaluation = {
+              pass: true,
+              confidence: 1.0,
+              reason: 'No visual differences detected',
+              needsReview: false
+            };
+          }
+
+          // Save diff image to disk
+          const diffImagePath = path.join(
+            this.projectRoot,
+            '.visual-uat/diffs',
+            checkpointName
+          );
+          const diffDir = path.dirname(diffImagePath);
+          if (!fs.existsSync(diffDir)) {
+            fs.mkdirSync(diffDir, { recursive: true });
+          }
+          fs.writeFileSync(diffImagePath, diffResult.diffImage);
+
+          checkpoints.push({
+            name: path.basename(checkpointName, '.png'),
+            baselineImage: baseImagePath,
+            currentImage: currentImagePath,
+            diffImage: diffImagePath,
+            diffMetrics: {
+              pixelDiffPercent: diffResult.pixelDiffPercent,
+              changedRegions: diffResult.changedRegions
+            },
+            evaluation: evaluation
+          });
+        }
+
+        // Determine overall test status
+        let status: import('../types/results').TestResult['status'] = 'passed';
+        if (checkpoints.some(c => c.evaluation?.needsReview)) {
+          status = 'needs-review';
+        } else if (checkpoints.some(c => !c.evaluation?.pass)) {
+          status = 'failed';
+        }
+
+        tests.push({
+          specPath,
+          generatedPath,
+          status,
+          checkpoints,
+          duration: currentResult.duration,
+          baselineAvailable: true
+        });
+      }
+
+      // Build RunResult
+      const currentBranch = execSync('git branch --show-current', {
+        cwd: this.projectRoot,
+        encoding: 'utf-8'
+      }).trim();
+
+      context.runResult = {
+        timestamp: Date.now(),
+        baseBranch: context.scope!.baseBranch,
+        currentBranch: currentBranch,
+        config: this.config,
+        tests: tests,
+        summary: {
+          total: tests.length,
+          passed: tests.filter(t => t.status === 'passed').length,
+          failed: tests.filter(t => t.status === 'failed').length,
+          errored: tests.filter(t => t.status === 'errored').length,
+          needsReview: tests.filter(t => t.status === 'needs-review').length
+        }
+      };
+
+      return 'STORE_RESULTS';
+    } catch (error) {
+      console.error('Comparison and evaluation failed:', error);
+      return 'FAILED';
+    }
+  }
+
   async execute(options: RunOptions): Promise<number> {
     // To be implemented in subsequent steps
     throw new Error('Not yet implemented');
