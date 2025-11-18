@@ -44,4 +44,21 @@ describe('StubTestGenerator', () => {
     expect(result.checkpoints).toContain('after-login');
     expect(result.checkpoints).toContain('dashboard-loaded');
   });
+
+  it('should include screenshotCheckpoint import in generated code', async () => {
+    const spec: TestSpec = {
+      path: 'tests/example.md',
+      content: 'Test login flow',
+      intent: 'Test login flow'
+    };
+
+    const context: CodebaseContext = {
+      files: [],
+      structure: ''
+    };
+
+    const result = await generator.generate(spec, context);
+
+    expect(result.code).toContain("import { screenshotCheckpoint } from 'visual-uat/playwright'");
+  });
 });
