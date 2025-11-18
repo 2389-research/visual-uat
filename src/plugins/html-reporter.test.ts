@@ -243,10 +243,13 @@ describe('HTMLReporter', () => {
     expect(content).toContain('test-errored');
     expect(content).toContain('test-needs-review');
 
+    // Passed and errored tests should not auto-expand
     expect(content).toContain('class="test-card passed"');
-    expect(content).toContain('class="test-card failed"');
     expect(content).toContain('class="test-card errored"');
-    expect(content).toContain('class="test-card needs-review"');
+
+    // Failed and needs-review tests should auto-expand
+    expect(content).toContain('class="test-card failed expanded"');
+    expect(content).toContain('class="test-card needs-review expanded"');
 
     expect(content).toContain('class="test-status passed">passed</span>');
     expect(content).toContain('class="test-status failed">failed</span>');
@@ -324,6 +327,82 @@ describe('HTMLReporter', () => {
     expect(content).toContain('&amp;');
     expect(content).toContain('&quot;');
     expect(content).not.toContain('test-with-<html>-&-quotes"');
+  });
+
+  describe('Checkpoint Display with Image Overlay', () => {
+    it('should display checkpoint details with image comparison slider', async () => {
+      const reporter = new HTMLReporter();
+      const result: RunResult = {
+        runId: 'a3f7b9c',
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [
+          {
+            specPath: 'tests/dashboard.md',
+            generatedPath: 'tests/generated/dashboard.spec.ts',
+            status: 'needs-review',
+            checkpoints: [
+              {
+                name: 'initial',
+                baselineImage: '.visual-uat/screenshots/base/dashboard/initial.png',
+                currentImage: '.visual-uat/screenshots/current/dashboard/initial.png',
+                diffImage: '.visual-uat/diffs/dashboard/initial.png',
+                diffMetrics: { pixelDiffPercent: 2.3, changedRegions: [] },
+                evaluation: {
+                  pass: false,
+                  confidence: 0.8,
+                  reason: 'Layout shifted slightly',
+                  needsReview: true
+                }
+              }
+            ],
+            duration: 2100,
+            baselineAvailable: true
+          }
+        ],
+        summary: { total: 1, passed: 0, failed: 0, errored: 0, needsReview: 1 }
+      };
+
+      await reporter.generate(result, { outputDir: testOutputDir });
+
+      const files = fs.readdirSync(testOutputDir);
+      const htmlFile = path.join(testOutputDir, files[0]);
+      const content = fs.readFileSync(htmlFile, 'utf-8');
+
+      // Verify checkpoint structure exists
+      expect(content).toContain('class="checkpoint');
+
+      // Verify checkpoint name
+      expect(content).toContain('initial');
+
+      // Verify diff percentage
+      expect(content).toContain('2.3%');
+
+      // Verify evaluation reasoning
+      expect(content).toContain('Layout shifted');
+
+      // Verify image comparison structure
+      expect(content).toContain('class="image-comparison');
+
+      // Verify slider control exists
+      expect(content).toContain('type="range"');
+
+      // Verify view mode buttons
+      expect(content).toContain('>Overlay<');
+      expect(content).toContain('>Diff<');
+      expect(content).toContain('>Side by Side<');
+
+      // Verify JavaScript functions for image comparison
+      expect(content).toContain('updateSlider');
+      expect(content).toContain('setViewMode');
+
+      // Verify auto-expand logic exists
+      expect(content).toContain('.test-card.needs-review');
+      expect(content).toContain('.test-card.failed');
+      expect(content).toContain('expanded');
+    });
   });
 
   describe('Filter Bar', () => {

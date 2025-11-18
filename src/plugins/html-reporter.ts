@@ -2,7 +2,7 @@
 // ABOUTME: Includes interactive image comparison, filtering, and embedded styling.
 
 import { ReporterPlugin, ReporterOptions } from '../types/plugins';
-import { RunResult, TestResult } from '../orchestrator/types/results';
+import { RunResult, TestResult, CheckpointResult } from '../orchestrator/types/results';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -206,6 +206,109 @@ export class HTMLReporter implements ReporterPlugin {
       color: #6b7280;
       font-size: 14px;
     }
+    .test-body {
+      margin-top: 15px;
+      display: none;
+    }
+    .test-card.expanded .test-body {
+      display: block;
+    }
+    .checkpoint {
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+    .checkpoint-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .checkpoint-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .checkpoint-metrics {
+      display: flex;
+      gap: 15px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .checkpoint-metrics .pass {
+      color: #10b981;
+      font-weight: bold;
+    }
+    .checkpoint-metrics .fail {
+      color: #ef4444;
+      font-weight: bold;
+    }
+    .evaluation {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .image-comparison {
+      margin: 15px 0;
+    }
+    .view-modes {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+    .view-modes button {
+      padding: 8px 16px;
+      border: 2px solid #e5e7eb;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .view-modes button:hover {
+      border-color: #9ca3af;
+    }
+    .view-modes button.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+    .comparison-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      background: #000;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .comparison-container img {
+      width: 100%;
+      display: block;
+    }
+    .current-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .slider {
+      width: 100%;
+      max-width: 800px;
+      display: block;
+      margin: 10px auto;
+      cursor: pointer;
+    }
+    .diff-img {
+      width: 100%;
+      max-width: 800px;
+      display: block;
+      margin: 0 auto;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -252,9 +355,16 @@ export class HTMLReporter implements ReporterPlugin {
     const name = this.escapeHTML(path.basename(test.specPath, '.md'));
     const status = this.escapeHTML(test.status);
     const duration = this.formatDuration(test.duration);
+    const autoExpand = test.status === 'needs-review' || test.status === 'failed';
+
+    const checkpointsHTML = test.checkpoints.length > 0
+      ? `<div class="test-body">${test.checkpoints.map(cp => this.generateCheckpointSection(cp)).join('\n')}</div>`
+      : '';
+
+    const expandedClass = autoExpand ? ' expanded' : '';
 
     return `
-    <div class="test-card ${status}" data-status="${status}">
+    <div class="test-card ${status}${expandedClass}" data-status="${status}">
       <div class="test-header">
         <div>
           <span class="test-name">${name}</span>
@@ -262,6 +372,54 @@ export class HTMLReporter implements ReporterPlugin {
         </div>
         <span class="test-status ${status}">${status}</span>
       </div>
+      ${checkpointsHTML}
+    </div>
+  `;
+  }
+
+  private generateCheckpointSection(checkpoint: CheckpointResult): string {
+    const diffPercent = checkpoint.diffMetrics.pixelDiffPercent.toFixed(1);
+    const evalIcon = checkpoint.evaluation.pass ? '✓' : '✗';
+    const evalClass = checkpoint.evaluation.pass ? 'pass' : 'fail';
+    const confidence = (checkpoint.evaluation.confidence * 100).toFixed(0);
+
+    return `
+    <div class="checkpoint">
+      <div class="checkpoint-header">
+        <h3>${this.escapeHTML(checkpoint.name)}</h3>
+        <div class="checkpoint-metrics">
+          <span class="${evalClass}">${evalIcon}</span>
+          <span>${diffPercent}% diff</span>
+          <span>${confidence}% confidence</span>
+        </div>
+      </div>
+
+      <div class="evaluation">
+        <strong>Evaluation:</strong> ${this.escapeHTML(checkpoint.evaluation.reason)}
+      </div>
+
+      ${this.generateImageComparison(checkpoint)}
+    </div>
+  `;
+  }
+
+  private generateImageComparison(checkpoint: CheckpointResult): string {
+    return `
+    <div class="image-comparison">
+      <div class="view-modes">
+        <button onclick="setViewMode(this, 'overlay')" class="active">Overlay</button>
+        <button onclick="setViewMode(this, 'diff')">Diff</button>
+        <button onclick="setViewMode(this, 'side-by-side')">Side by Side</button>
+      </div>
+
+      <div class="comparison-container">
+        <img src="${checkpoint.baselineImage}" class="baseline-img" alt="Baseline" loading="lazy">
+        <img src="${checkpoint.currentImage}" class="current-img" alt="Current" loading="lazy" style="clip-path: inset(0 50% 0 0);">
+      </div>
+      <input type="range" min="0" max="100" value="50" class="slider"
+             onchange="updateSlider(this)" oninput="updateSlider(this)">
+
+      <img src="${checkpoint.diffImage}" class="diff-img" style="display: none;" alt="Diff" loading="lazy">
     </div>
   `;
   }
@@ -356,7 +514,50 @@ export class HTMLReporter implements ReporterPlugin {
         currentSearchText = this.value;
         applyFilters();
       });
+
+      // Toggle test card expand/collapse
+      testCards.forEach(card => {
+        const header = card.querySelector('.test-header');
+        if (header) {
+          header.addEventListener('click', function() {
+            card.classList.toggle('expanded');
+          });
+        }
+      });
     })();
+
+    // Image comparison slider
+    function updateSlider(slider) {
+      const container = slider.previousElementSibling;
+      const currentImg = container.querySelector('.current-img');
+      const value = slider.value;
+      currentImg.style.clipPath = 'inset(0 ' + (100 - value) + '% 0 0)';
+    }
+
+    // View mode switching
+    function setViewMode(btn, mode) {
+      const comparison = btn.closest('.image-comparison');
+      const container = comparison.querySelector('.comparison-container');
+      const slider = comparison.querySelector('.slider');
+      const diffImg = comparison.querySelector('.diff-img');
+      const buttons = comparison.querySelectorAll('.view-modes button');
+
+      // Update active button
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (mode === 'overlay') {
+        container.style.display = 'block';
+        slider.style.display = 'block';
+        diffImg.style.display = 'none';
+      } else if (mode === 'diff') {
+        container.style.display = 'none';
+        slider.style.display = 'none';
+        diffImg.style.display = 'block';
+      } else if (mode === 'side-by-side') {
+        alert('Side-by-side view coming soon');
+      }
+    }
   </script>`;
   }
 }
