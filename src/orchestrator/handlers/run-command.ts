@@ -8,6 +8,7 @@ import { SpecManifest } from '../../specs/manifest';
 import { TestSpec, CodebaseContext } from '../../types/plugins';
 import { ExecutionState, ExecutionContext, ExecutionScope } from './execution-states';
 import { WorktreeManager } from '../services/worktree-manager';
+import { TestRunner } from '../services/test-runner';
 import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -127,6 +128,44 @@ export class RunCommandHandler {
       return 'EXECUTE_BASE';
     } catch (error) {
       console.error('Setup failed:', error);
+      return 'FAILED';
+    }
+  }
+
+  private async handleExecuteBase(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      const screenshotDir = path.join(
+        this.projectRoot,
+        '.visual-uat/screenshots/base'
+      );
+      const runner = new TestRunner(context.worktrees!.base, screenshotDir);
+
+      // Get list of generated tests
+      const specsToRun = context.scope!.specsToGenerate;
+
+      for (const specPath of specsToRun) {
+        const baseName = path.basename(specPath, '.md');
+        const testPath = path.join(
+          this.config.generatedDir,
+          `${baseName}.spec.ts`
+        );
+
+        console.log(`Running base test: ${baseName}`);
+        const result = await runner.runTest(testPath);
+
+        context.baseResults.set(specPath, result);
+
+        if (result.status === 'errored') {
+          console.warn(`Base test errored: ${baseName} - ${result.error}`);
+          console.warn('Will continue but flag as no baseline available');
+        }
+      }
+
+      return 'EXECUTE_CURRENT';
+    } catch (error) {
+      console.error('Base execution failed:', error);
       return 'FAILED';
     }
   }
