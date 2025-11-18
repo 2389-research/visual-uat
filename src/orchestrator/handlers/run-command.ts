@@ -3,9 +3,14 @@
 
 import { Config } from '../../types/config';
 import { LoadedPlugins } from '../services/plugin-registry';
-import { ChangeDetector, ExecutionScope, RunOptions } from '../services/change-detector';
+import { ChangeDetector, RunOptions } from '../services/change-detector';
 import { SpecManifest } from '../../specs/manifest';
 import { TestSpec, CodebaseContext } from '../../types/plugins';
+import { ExecutionState, ExecutionContext, ExecutionScope, RawTestResult } from './execution-states';
+import { WorktreeManager } from '../services/worktree-manager';
+import { TestRunner } from '../services/test-runner';
+import { ResultStore } from '../services/result-store';
+import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -16,6 +21,7 @@ export interface GenerationResult {
 
 export class RunCommandHandler {
   private changeDetector: ChangeDetector;
+  private resultStore: ResultStore;
 
   constructor(
     private config: Config,
@@ -24,17 +30,26 @@ export class RunCommandHandler {
   ) {
     const manifest = new SpecManifest(projectRoot);
     this.changeDetector = new ChangeDetector(config, manifest, projectRoot);
+    this.resultStore = new ResultStore(projectRoot);
   }
 
   async determineScope(options: RunOptions): Promise<ExecutionScope> {
-    return this.changeDetector.determineScope(options);
+    const scopeType = this.changeDetector.determineScope(options);
+    const baseBranch = options.baseBranch || this.config.baseBranch;
+    const specsToGenerate = this.changeDetector.getSpecsToGenerate(scopeType);
+
+    return {
+      type: scopeType,
+      baseBranch,
+      specsToGenerate
+    };
   }
 
   async generateTests(
     scope: ExecutionScope,
     options: { failFast?: boolean } = {}
   ): Promise<GenerationResult> {
-    const specsToGenerate = this.changeDetector.getSpecsToGenerate(scope);
+    const specsToGenerate = scope.specsToGenerate;
     const results: GenerationResult = { success: [], failed: [] };
     const manifest = new SpecManifest(this.projectRoot);
 
@@ -84,8 +99,378 @@ export class RunCommandHandler {
     return outputPath;
   }
 
+  private async handleSetup(
+    context: ExecutionContext,
+    options: RunOptions
+  ): Promise<ExecutionState> {
+    try {
+      // Determine scope
+      context.scope = await this.determineScope(options);
+
+      if (context.scope.type === 'skip') {
+        console.log('No changes detected, skipping tests');
+        return 'COMPLETE';
+      }
+
+      // Generate tests
+      await this.generateTests(context.scope);
+
+      // Get current branch
+      const currentBranch = execSync('git branch --show-current', {
+        cwd: this.projectRoot,
+        encoding: 'utf-8'
+      }).trim();
+
+      // Create worktrees
+      const worktreeManager = new WorktreeManager(this.projectRoot);
+      context.worktrees = await worktreeManager.createWorktrees(
+        context.scope.baseBranch,
+        currentBranch
+      );
+
+      return 'EXECUTE_BASE';
+    } catch (error) {
+      console.error('Setup failed:', error);
+      return 'FAILED';
+    }
+  }
+
+  private async handleExecuteBase(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      const screenshotDir = path.join(
+        this.projectRoot,
+        '.visual-uat/screenshots/base'
+      );
+      const runner = new TestRunner(context.worktrees!.base, screenshotDir);
+
+      // Get list of generated tests
+      const specsToRun = context.scope!.specsToGenerate;
+
+      for (const specPath of specsToRun) {
+        const baseName = path.basename(specPath, '.md');
+        const testPath = path.join(
+          this.config.generatedDir,
+          `${baseName}.spec.ts`
+        );
+
+        console.log(`Running base test: ${baseName}`);
+        const result = runner.runTest(testPath);
+
+        context.baseResults.set(specPath, result);
+
+        if (result.status === 'errored') {
+          console.warn(`Base test errored: ${baseName} - ${result.error}`);
+          console.warn('Will continue but flag as no baseline available');
+        }
+      }
+
+      return 'EXECUTE_CURRENT';
+    } catch (error) {
+      console.error('Base execution failed:', error);
+      return 'FAILED';
+    }
+  }
+
+  private async handleExecuteCurrent(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      const screenshotDir = path.join(
+        this.projectRoot,
+        '.visual-uat/screenshots/current'
+      );
+      const runner = new TestRunner(context.worktrees!.current, screenshotDir);
+
+      const specsToRun = context.scope!.specsToGenerate;
+
+      for (const specPath of specsToRun) {
+        const baseName = path.basename(specPath, '.md');
+        const testPath = path.join(
+          this.config.generatedDir,
+          `${baseName}.spec.ts`
+        );
+
+        console.log(`Running current test: ${baseName}`);
+        const result = runner.runTest(testPath);
+
+        context.currentResults.set(specPath, result);
+
+        if (result.status === 'errored') {
+          console.warn(`Current test errored: ${baseName} - ${result.error}`);
+        }
+      }
+
+      return 'COMPARE_AND_EVALUATE';
+    } catch (error) {
+      console.error('Current execution failed:', error);
+      return 'FAILED';
+    }
+  }
+
+  private async handleCompareAndEvaluate(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      const tests: import('../types/results').TestResult[] = [];
+
+      for (const specPath of context.scope!.specsToGenerate) {
+        const baseResult = context.baseResults.get(specPath);
+        const currentResult = context.currentResults.get(specPath);
+
+        if (!baseResult || !currentResult) {
+          continue;
+        }
+
+        const baseName = path.basename(specPath, '.md');
+        const generatedPath = path.join(
+          this.config.generatedDir,
+          `${baseName}.spec.ts`
+        );
+
+        // If base errored, mark as no baseline
+        if (baseResult.status === 'errored') {
+          tests.push({
+            specPath,
+            generatedPath,
+            status: 'errored',
+            checkpoints: [],
+            duration: currentResult.duration,
+            error: `No baseline available: ${baseResult.error}`,
+            baselineAvailable: false
+          });
+          continue;
+        }
+
+        // If current errored, mark as errored
+        if (currentResult.status === 'errored') {
+          tests.push({
+            specPath,
+            generatedPath,
+            status: 'errored',
+            checkpoints: [],
+            duration: currentResult.duration,
+            error: currentResult.error,
+            baselineAvailable: true
+          });
+          continue;
+        }
+
+        // Compare screenshots for each checkpoint
+        const checkpoints: import('../types/results').CheckpointResult[] = [];
+        const specContent = fs.readFileSync(specPath, 'utf-8');
+
+        for (let i = 0; i < baseResult.screenshots.length; i++) {
+          const checkpointName = baseResult.screenshots[i];
+          const baseImagePath = path.join(
+            this.projectRoot,
+            '.visual-uat/screenshots/base',
+            checkpointName
+          );
+          const currentImagePath = path.join(
+            this.projectRoot,
+            '.visual-uat/screenshots/current',
+            checkpointName
+          );
+
+          // Load images as Screenshot objects
+          const baseImageData = fs.readFileSync(baseImagePath);
+          const currentImageData = fs.readFileSync(currentImagePath);
+
+          const baseScreenshot: import('../../types/plugins').Screenshot = {
+            data: baseImageData,
+            width: 0,
+            height: 0,
+            checkpoint: path.basename(checkpointName, '.png')
+          };
+
+          const currentScreenshot: import('../../types/plugins').Screenshot = {
+            data: currentImageData,
+            width: 0,
+            height: 0,
+            checkpoint: path.basename(checkpointName, '.png')
+          };
+
+          const diffResult = await this.plugins.differ.compare(
+            baseScreenshot,
+            currentScreenshot
+          );
+
+          let evaluation;
+
+          // Only evaluate if there are differences
+          if (diffResult.pixelDiffPercent > 0) {
+            evaluation = await this.plugins.evaluator.evaluate({
+              intent: specContent,
+              checkpoint: path.basename(checkpointName, '.png'),
+              diffResult: diffResult,
+              baselineImage: baseImageData,
+              currentImage: currentImageData
+            });
+          } else {
+            // No differences, auto-pass
+            evaluation = {
+              pass: true,
+              confidence: 1.0,
+              reason: 'No visual differences detected',
+              needsReview: false
+            };
+          }
+
+          // Save diff image to disk
+          const diffImagePath = path.join(
+            this.projectRoot,
+            '.visual-uat/diffs',
+            checkpointName
+          );
+          const diffDir = path.dirname(diffImagePath);
+          if (!fs.existsSync(diffDir)) {
+            fs.mkdirSync(diffDir, { recursive: true });
+          }
+          fs.writeFileSync(diffImagePath, diffResult.diffImage);
+
+          checkpoints.push({
+            name: path.basename(checkpointName, '.png'),
+            baselineImage: baseImagePath,
+            currentImage: currentImagePath,
+            diffImage: diffImagePath,
+            diffMetrics: {
+              pixelDiffPercent: diffResult.pixelDiffPercent,
+              changedRegions: diffResult.changedRegions
+            },
+            evaluation: evaluation
+          });
+        }
+
+        // Determine overall test status
+        let status: import('../types/results').TestResult['status'] = 'passed';
+        if (checkpoints.some(c => c.evaluation?.needsReview)) {
+          status = 'needs-review';
+        } else if (checkpoints.some(c => !c.evaluation?.pass)) {
+          status = 'failed';
+        }
+
+        tests.push({
+          specPath,
+          generatedPath,
+          status,
+          checkpoints,
+          duration: currentResult.duration,
+          baselineAvailable: true
+        });
+      }
+
+      // Build RunResult
+      const currentBranch = execSync('git branch --show-current', {
+        cwd: this.projectRoot,
+        encoding: 'utf-8'
+      }).trim();
+
+      context.runResult = {
+        timestamp: Date.now(),
+        baseBranch: context.scope!.baseBranch,
+        currentBranch: currentBranch,
+        config: this.config,
+        tests: tests,
+        summary: {
+          total: tests.length,
+          passed: tests.filter(t => t.status === 'passed').length,
+          failed: tests.filter(t => t.status === 'failed').length,
+          errored: tests.filter(t => t.status === 'errored').length,
+          needsReview: tests.filter(t => t.status === 'needs-review').length
+        }
+      };
+
+      return 'STORE_RESULTS';
+    } catch (error) {
+      console.error('Comparison and evaluation failed:', error);
+      return 'FAILED';
+    }
+  }
+
+  private async handleStoreResults(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      await this.resultStore.saveRunResult(context.runResult!);
+      console.log('Results saved');
+      return 'CLEANUP';
+    } catch (error) {
+      console.error('Failed to store results:', error);
+      return 'FAILED';
+    }
+  }
+
+  private async handleCleanup(
+    context: ExecutionContext
+  ): Promise<ExecutionState> {
+    try {
+      if (!context.keepWorktrees) {
+        const worktreeManager = new WorktreeManager(this.projectRoot);
+        worktreeManager.cleanup();
+        console.log('Worktrees cleaned up');
+      } else {
+        console.log('Keeping worktrees for debugging');
+      }
+      return 'COMPLETE';
+    } catch (error) {
+      console.warn('Cleanup failed:', error);
+      // Don't fail the whole run if cleanup fails
+      return 'COMPLETE';
+    }
+  }
+
   async execute(options: RunOptions): Promise<number> {
-    // To be implemented in subsequent steps
-    throw new Error('Not yet implemented');
+    let state: ExecutionState = 'SETUP';
+    const context: ExecutionContext = {
+      scope: null,
+      worktrees: null,
+      baseResults: new Map<string, RawTestResult>(),
+      currentResults: new Map<string, RawTestResult>(),
+      runResult: null,
+      keepWorktrees: options.keepWorktrees || false
+    };
+
+    try {
+      while (state !== 'COMPLETE' && state !== 'FAILED') {
+        switch (state) {
+          case 'SETUP':
+            state = await this.handleSetup(context, options);
+            break;
+          case 'EXECUTE_BASE':
+            state = await this.handleExecuteBase(context);
+            break;
+          case 'EXECUTE_CURRENT':
+            state = await this.handleExecuteCurrent(context);
+            break;
+          case 'COMPARE_AND_EVALUATE':
+            state = await this.handleCompareAndEvaluate(context);
+            break;
+          case 'STORE_RESULTS':
+            state = await this.handleStoreResults(context);
+            break;
+          case 'CLEANUP':
+            state = await this.handleCleanup(context);
+            break;
+        }
+      }
+
+      return state === 'COMPLETE' ? 0 : 1;
+    } catch (error) {
+      console.error('Execution error:', error);
+
+      // Attempt cleanup before failing
+      if (!context.keepWorktrees && context.worktrees) {
+        try {
+          const worktreeManager = new WorktreeManager(this.projectRoot);
+          worktreeManager.cleanup();
+        } catch (cleanupError) {
+          console.error('Cleanup error:', cleanupError);
+        }
+      }
+
+      return 1;
+    }
   }
 }

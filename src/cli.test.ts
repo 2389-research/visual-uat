@@ -63,3 +63,16 @@ describe('CLI - Orchestrator Integration', () => {
     expect(optionFlags).toContain('--latest');
   });
 });
+
+describe('CLI run command with keepWorktrees', () => {
+  it('should have --keep-worktrees flag', () => {
+    const program = createCLI();
+    const runCommand = program.commands.find(cmd => cmd.name() === 'run');
+
+    expect(runCommand).toBeDefined();
+    const options = runCommand?.options || [];
+    const optionFlags = options.map((opt: any) => opt.flags);
+
+    expect(optionFlags).toContain('--keep-worktrees');
+  });
+});
