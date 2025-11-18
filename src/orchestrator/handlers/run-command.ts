@@ -6,7 +6,7 @@ import { LoadedPlugins } from '../services/plugin-registry';
 import { ChangeDetector, RunOptions } from '../services/change-detector';
 import { SpecManifest } from '../../specs/manifest';
 import { TestSpec, CodebaseContext } from '../../types/plugins';
-import { ExecutionState, ExecutionContext, ExecutionScope } from './execution-states';
+import { ExecutionState, ExecutionContext, ExecutionScope, RawTestResult } from './execution-states';
 import { WorktreeManager } from '../services/worktree-manager';
 import { TestRunner } from '../services/test-runner';
 import { ResultStore } from '../services/result-store';
@@ -422,7 +422,55 @@ export class RunCommandHandler {
   }
 
   async execute(options: RunOptions): Promise<number> {
-    // To be implemented in subsequent steps
-    throw new Error('Not yet implemented');
+    let state: ExecutionState = 'SETUP';
+    const context: ExecutionContext = {
+      scope: null,
+      worktrees: null,
+      baseResults: new Map<string, RawTestResult>(),
+      currentResults: new Map<string, RawTestResult>(),
+      runResult: null,
+      keepWorktrees: options.keepWorktrees || false
+    };
+
+    try {
+      while (state !== 'COMPLETE' && state !== 'FAILED') {
+        switch (state) {
+          case 'SETUP':
+            state = await this.handleSetup(context, options);
+            break;
+          case 'EXECUTE_BASE':
+            state = await this.handleExecuteBase(context);
+            break;
+          case 'EXECUTE_CURRENT':
+            state = await this.handleExecuteCurrent(context);
+            break;
+          case 'COMPARE_AND_EVALUATE':
+            state = await this.handleCompareAndEvaluate(context);
+            break;
+          case 'STORE_RESULTS':
+            state = await this.handleStoreResults(context);
+            break;
+          case 'CLEANUP':
+            state = await this.handleCleanup(context);
+            break;
+        }
+      }
+
+      return state === 'COMPLETE' ? 0 : 1;
+    } catch (error) {
+      console.error('Execution error:', error);
+
+      // Attempt cleanup before failing
+      if (!context.keepWorktrees && context.worktrees) {
+        try {
+          const worktreeManager = new WorktreeManager(this.projectRoot);
+          worktreeManager.cleanup();
+        } catch (cleanupError) {
+          console.error('Cleanup error:', cleanupError);
+        }
+      }
+
+      return 1;
+    }
   }
 }
