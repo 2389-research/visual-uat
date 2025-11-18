@@ -403,7 +403,7 @@ describe('RunCommandHandler.handleExecuteBase', () => {
     expect(context.baseResults.size).toBe(1);
   });
 
-  it('should continue on base test error and set baselineAvailable flag', async () => {
+  it('should continue execution and store result when base test errors', async () => {
     const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
     const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
     const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
