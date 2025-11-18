@@ -2,11 +2,13 @@
 // ABOUTME: Future enhancement: support external plugins via npm packages.
 
 import { Config } from '../../types/config';
-import { TestGenerator, TargetRunner, Differ, Evaluator } from '../../types/plugins';
+import { TestGenerator, TargetRunner, Differ, Evaluator, ReporterPlugin } from '../../types/plugins';
 import { StubTestGenerator } from '../../plugins/test-generator-stub';
 import { PlaywrightRunner } from '../../plugins/playwright-runner';
 import { PixelmatchDiffer } from '../../plugins/pixelmatch-differ';
 import { ClaudeEvaluator } from '../../plugins/claude-evaluator';
+import { TerminalReporter } from '../../plugins/terminal-reporter';
+import { HTMLReporter } from '../../plugins/html-reporter';
 
 type PluginType = 'testGenerator' | 'targetRunner' | 'differ' | 'evaluator';
 
@@ -15,6 +17,8 @@ export interface LoadedPlugins {
   targetRunner: TargetRunner;
   differ: Differ;
   evaluator: Evaluator;
+  terminalReporter: ReporterPlugin;
+  htmlReporter: ReporterPlugin;
 }
 
 export class PluginRegistry {
@@ -71,7 +75,9 @@ export class PluginRegistry {
       testGenerator: this.loadPlugin('testGenerator') as TestGenerator,
       targetRunner: this.loadPlugin('targetRunner') as TargetRunner,
       differ: this.loadPlugin('differ') as Differ,
-      evaluator: this.loadPlugin('evaluator') as Evaluator
+      evaluator: this.loadPlugin('evaluator') as Evaluator,
+      terminalReporter: new TerminalReporter(),
+      htmlReporter: new HTMLReporter()
     };
   }
 }

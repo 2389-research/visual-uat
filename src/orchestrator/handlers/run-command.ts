@@ -5,7 +5,7 @@ import { Config } from '../../types/config';
 import { LoadedPlugins } from '../services/plugin-registry';
 import { ChangeDetector, RunOptions } from '../services/change-detector';
 import { SpecManifest } from '../../specs/manifest';
-import { TestSpec, CodebaseContext } from '../../types/plugins';
+import { TestSpec, CodebaseContext, ReporterOptions } from '../../types/plugins';
 import { ExecutionState, ExecutionContext, ExecutionScope, RawTestResult } from './execution-states';
 import { WorktreeManager } from '../services/worktree-manager';
 import { TestRunner } from '../services/test-runner';
@@ -402,6 +402,28 @@ export class RunCommandHandler {
 
       await this.resultStore.saveRunResult(context.runResult!);
       console.log('Results saved');
+
+      // Generate reports
+      const reporterOptions: ReporterOptions = {
+        verbosity: 'normal',
+        outputDir: '.visual-uat/reports',
+        embedImages: false
+      };
+
+      // Call terminal reporter first for immediate feedback
+      try {
+        await this.plugins.terminalReporter.generate(context.runResult!, reporterOptions);
+      } catch (error) {
+        console.error('Terminal reporter failed:', error);
+      }
+
+      // Call HTML reporter second
+      try {
+        await this.plugins.htmlReporter.generate(context.runResult!, reporterOptions);
+      } catch (error) {
+        console.error('HTML reporter failed:', error);
+      }
+
       return 'CLEANUP';
     } catch (error) {
       console.error('Failed to store results:', error);
