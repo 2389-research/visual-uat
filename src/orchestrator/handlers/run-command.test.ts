@@ -540,4 +540,63 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
     expect(nextState).toBe('COMPARE_AND_EVALUATE');
     expect(context.currentResults.size).toBe(1);
   });
+
+  it('should continue execution and store result when current test errors', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    const mockRunTest = jest.fn().mockResolvedValue({
+      testPath: 'tests/generated/broken.spec.ts',
+      status: 'errored',
+      duration: 0,
+      screenshots: [],
+      error: 'Test crashed'
+    });
+
+    // Mock TestRunner
+    (TestRunner as jest.Mock).mockImplementation(() => ({
+      runTest: mockRunTest
+    }));
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    const context: ExecutionContext = {
+      scope: {
+        type: 'full',
+        baseBranch: 'main',
+        specsToGenerate: ['tests/broken.md']
+      },
+      worktrees: {
+        base: '/worktrees/base',
+        current: '/worktrees/current'
+      },
+      baseResults: new Map([
+        ['tests/broken.md', {
+          testPath: 'tests/generated/broken.spec.ts',
+          status: 'passed',
+          duration: 1400,
+          screenshots: ['initial.png']
+        }]
+      ]),
+      currentResults: new Map(),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    const nextState = await (handler as any).handleExecuteCurrent(context);
+
+    expect(nextState).toBe('COMPARE_AND_EVALUATE');
+    expect(context.currentResults.get('tests/broken.md')?.status).toBe('errored');
+  });
 });
