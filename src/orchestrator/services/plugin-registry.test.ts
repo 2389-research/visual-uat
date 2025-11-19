@@ -155,5 +155,15 @@ describe('PluginRegistry', () => {
       expect(plugins.differ).toBeDefined();
       expect(plugins.evaluator).toBeDefined();
     });
+
+    it('should load reporter plugins', () => {
+      const registry = new PluginRegistry(config);
+      const plugins = registry.loadAll();
+
+      expect(plugins.terminalReporter).toBeDefined();
+      expect(plugins.htmlReporter).toBeDefined();
+      expect(typeof plugins.terminalReporter.generate).toBe('function');
+      expect(typeof plugins.htmlReporter.generate).toBe('function');
+    });
   });
 });

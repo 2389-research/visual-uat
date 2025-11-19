@@ -18,6 +18,21 @@ export interface EvaluatorConfig {
   autoFailThreshold?: number;
 }
 
+export interface TerminalReporterConfig {
+  enabled?: boolean;
+  defaultVerbosity?: 'quiet' | 'normal' | 'verbose';
+}
+
+export interface HtmlReporterConfig {
+  enabled?: boolean;
+  // Note: Image embedding (base64) deferred to future enhancement
+}
+
+export interface ReporterConfig {
+  terminal?: TerminalReporterConfig;
+  html?: HtmlReporterConfig;
+}
+
 export interface Config {
   baseBranch: string;
   specsDir: string;
@@ -25,6 +40,7 @@ export interface Config {
   plugins: PluginConfig;
   targetRunner: TargetRunnerConfig;
   evaluator: EvaluatorConfig;
+  reporters?: ReporterConfig;
 }
 
 export const DEFAULT_CONFIG: Partial<Config> = {

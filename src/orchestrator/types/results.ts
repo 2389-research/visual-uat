@@ -32,6 +32,7 @@ export interface TestResult {
 }
 
 export interface RunResult {
+  runId: string;
   timestamp: number;
   baseBranch: string;
   currentBranch: string;

@@ -11,8 +11,11 @@ import type {
   GeneratedTest,
   DiffResult,
   EvaluationInput,
-  EvaluationResult
+  EvaluationResult,
+  ReporterPlugin,
+  ReporterOptions
 } from './plugins';
+import type { RunResult } from '../orchestrator/types/results';
 
 describe('Plugin Interfaces', () => {
   it('should export TargetRunner interface', () => {
@@ -62,5 +65,38 @@ describe('Plugin Interfaces', () => {
       })
     };
     expect(mockEvaluator).toBeDefined();
+  });
+
+  describe('ReporterPlugin interface', () => {
+    it('should accept valid ReporterPlugin implementation', () => {
+      const mockReporter: ReporterPlugin = {
+        generate: async (result: RunResult, options: ReporterOptions) => {
+          // Mock implementation
+        }
+      };
+
+      expect(mockReporter.generate).toBeDefined();
+      expect(typeof mockReporter.generate).toBe('function');
+    });
+
+    it('should accept valid ReporterOptions', () => {
+      const options: ReporterOptions = {
+        verbosity: 'normal',
+        outputDir: '/path/to/output',
+        autoOpen: false
+      };
+
+      expect(options.verbosity).toBe('normal');
+      expect(options.autoOpen).toBe(false);
+    });
+
+    it('should accept all verbosity levels', () => {
+      const levels: Array<'quiet' | 'normal' | 'verbose'> = ['quiet', 'normal', 'verbose'];
+
+      levels.forEach(level => {
+        const options: ReporterOptions = { verbosity: level };
+        expect(options.verbosity).toBe(level);
+      });
+    });
   });
 });

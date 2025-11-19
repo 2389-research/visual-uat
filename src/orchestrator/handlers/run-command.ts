@@ -5,11 +5,12 @@ import { Config } from '../../types/config';
 import { LoadedPlugins } from '../services/plugin-registry';
 import { ChangeDetector, RunOptions } from '../services/change-detector';
 import { SpecManifest } from '../../specs/manifest';
-import { TestSpec, CodebaseContext } from '../../types/plugins';
+import { TestSpec, CodebaseContext, ReporterOptions } from '../../types/plugins';
 import { ExecutionState, ExecutionContext, ExecutionScope, RawTestResult } from './execution-states';
 import { WorktreeManager } from '../services/worktree-manager';
 import { TestRunner } from '../services/test-runner';
 import { ResultStore } from '../services/result-store';
+import { generateRunId } from '../services/run-id-generator';
 import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -22,6 +23,7 @@ export interface GenerationResult {
 export class RunCommandHandler {
   private changeDetector: ChangeDetector;
   private resultStore: ResultStore;
+  private runOptions?: RunOptions;
 
   constructor(
     private config: Config,
@@ -368,6 +370,7 @@ export class RunCommandHandler {
       }).trim();
 
       context.runResult = {
+        runId: '', // Will be generated in handleStoreResults
         timestamp: Date.now(),
         baseBranch: context.scope!.baseBranch,
         currentBranch: currentBranch,
@@ -389,12 +392,69 @@ export class RunCommandHandler {
     }
   }
 
+  private getVerbosity(): 'quiet' | 'normal' | 'verbose' {
+    // CLI flags take precedence over config
+    if (this.runOptions) {
+      // Warn if both quiet and verbose are specified (conflicting flags)
+      if (this.runOptions.quiet && this.runOptions.verbose) {
+        console.warn('Warning: Both --quiet and --verbose flags specified. Using --quiet.');
+      }
+      if (this.runOptions.quiet) {
+        return 'quiet';
+      }
+      if (this.runOptions.verbose) {
+        return 'verbose';
+      }
+    }
+
+    // Use config default verbosity if specified
+    if (this.config.reporters?.terminal?.defaultVerbosity) {
+      return this.config.reporters.terminal.defaultVerbosity;
+    }
+
+    // Default to normal
+    return 'normal';
+  }
+
   private async handleStoreResults(
     context: ExecutionContext
   ): Promise<ExecutionState> {
     try {
+      // Generate runId if not already set
+      if (!context.runResult!.runId) {
+        context.runResult!.runId = generateRunId();
+      }
+
       await this.resultStore.saveRunResult(context.runResult!);
       console.log('Results saved');
+
+      // Generate reports
+      const reporterOptions: ReporterOptions = {
+        verbosity: this.getVerbosity(),
+        outputDir: path.join(this.projectRoot, '.visual-uat/reports'),
+        autoOpen: this.runOptions?.open || false
+      };
+
+      // Call terminal reporter first for immediate feedback (unless disabled in config)
+      const terminalEnabled = this.config.reporters?.terminal?.enabled !== false;
+      if (terminalEnabled) {
+        try {
+          await this.plugins.terminalReporter.generate(context.runResult!, reporterOptions);
+        } catch (error) {
+          console.error('Terminal reporter failed:', error);
+        }
+      }
+
+      // Call HTML reporter second (unless --no-html flag is set or disabled in config)
+      const htmlEnabled = this.config.reporters?.html?.enabled !== false;
+      if (!this.runOptions?.noHtml && htmlEnabled) {
+        try {
+          await this.plugins.htmlReporter.generate(context.runResult!, reporterOptions);
+        } catch (error) {
+          console.error('HTML reporter failed:', error);
+        }
+      }
+
       return 'CLEANUP';
     } catch (error) {
       console.error('Failed to store results:', error);
@@ -422,6 +482,9 @@ export class RunCommandHandler {
   }
 
   async execute(options: RunOptions): Promise<number> {
+    // Store runOptions for access by helper methods
+    this.runOptions = options;
+
     let state: ExecutionState = 'SETUP';
     const context: ExecutionContext = {
       scope: null,

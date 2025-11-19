@@ -60,6 +60,7 @@ describe('Result Types', () => {
   describe('RunResult', () => {
     it('should create valid run result', () => {
       const runResult: RunResult = {
+        runId: 'abc1234',
         timestamp: 1731870123,
         baseBranch: 'main',
         currentBranch: 'feature/new-ui',
@@ -76,6 +77,23 @@ describe('Result Types', () => {
 
       expect(runResult.summary.total).toBe(5);
       expect(runResult.summary.passed).toBe(3);
+    });
+  });
+
+  describe('RunResult with runId', () => {
+    it('should include runId in RunResult', () => {
+      const result: RunResult = {
+        runId: 'a3f7b9c',
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      };
+
+      expect(result.runId).toBe('a3f7b9c');
+      expect(result.runId).toHaveLength(7);
     });
   });
 });

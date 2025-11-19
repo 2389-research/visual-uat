@@ -76,3 +76,49 @@ describe('CLI run command with keepWorktrees', () => {
     expect(optionFlags).toContain('--keep-worktrees');
   });
 });
+
+describe('CLI run command reporter flags', () => {
+  it('should have --quiet flag with -q alias', () => {
+    const program = createCLI();
+    const runCommand = program.commands.find(cmd => cmd.name() === 'run');
+
+    expect(runCommand).toBeDefined();
+    const options = runCommand?.options || [];
+    const optionFlags = options.map((opt: any) => opt.flags);
+
+    expect(optionFlags).toContain('--quiet, -q');
+  });
+
+  it('should have --verbose flag with -v alias', () => {
+    const program = createCLI();
+    const runCommand = program.commands.find(cmd => cmd.name() === 'run');
+
+    expect(runCommand).toBeDefined();
+    const options = runCommand?.options || [];
+    const optionFlags = options.map((opt: any) => opt.flags);
+
+    expect(optionFlags).toContain('--verbose, -v');
+  });
+
+  it('should have --no-html flag', () => {
+    const program = createCLI();
+    const runCommand = program.commands.find(cmd => cmd.name() === 'run');
+
+    expect(runCommand).toBeDefined();
+    const options = runCommand?.options || [];
+    const optionFlags = options.map((opt: any) => opt.flags);
+
+    expect(optionFlags).toContain('--no-html');
+  });
+
+  it('should have --open flag with -o alias', () => {
+    const program = createCLI();
+    const runCommand = program.commands.find(cmd => cmd.name() === 'run');
+
+    expect(runCommand).toBeDefined();
+    const options = runCommand?.options || [];
+    const optionFlags = options.map((opt: any) => opt.flags);
+
+    expect(optionFlags).toContain('--open, -o');
+  });
+});

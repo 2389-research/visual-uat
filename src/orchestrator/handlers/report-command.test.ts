@@ -21,6 +21,7 @@ describe('ReportCommandHandler', () => {
   describe('execute', () => {
     it('should load latest result when no runId provided', async () => {
       const mockResult: RunResult = {
+        runId: 'abc1234',
         timestamp: 1731870123,
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -42,6 +43,7 @@ describe('ReportCommandHandler', () => {
 
     it('should load specific result when runId provided', async () => {
       const mockResult: RunResult = {
+        runId: 'def5678',
         timestamp: 1731870456,
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -76,6 +78,7 @@ describe('ReportCommandHandler', () => {
 
     it('should display failed tests in output', async () => {
       const mockResult: RunResult = {
+        runId: 'ghi9012',
         timestamp: 1731870123,
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -106,6 +109,7 @@ describe('ReportCommandHandler', () => {
 
     it('should display tests needing review in output', async () => {
       const mockResult: RunResult = {
+        runId: 'jkl3456',
         timestamp: 1731870123,
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -136,6 +140,7 @@ describe('ReportCommandHandler', () => {
 
     it('should display errored test count in output', async () => {
       const mockResult: RunResult = {
+        runId: 'mno7890',
         timestamp: 1731870123,
         baseBranch: 'main',
         currentBranch: 'feature/test',
@@ -164,6 +169,7 @@ describe('ReportCommandHandler', () => {
 
     it('should display all sections with mixed test statuses', async () => {
       const mockResult: RunResult = {
+        runId: 'pqr1234',
         timestamp: 1731870123,
         baseBranch: 'main',
         currentBranch: 'feature/test',
