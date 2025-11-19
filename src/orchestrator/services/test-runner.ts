@@ -2,6 +2,8 @@
 // ABOUTME: Executes tests, parses output, and captures screenshot paths.
 
 import { spawnSync } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 import { RawTestResult } from '../handlers/execution-states';
 
 export class TestRunner {
@@ -46,12 +48,34 @@ export class TestRunner {
       };
     }
 
-    // TODO: Parse JSON output to get screenshots and duration
+    // Discover screenshots by scanning the screenshot directory
+    const screenshots: string[] = [];
+    try {
+      if (fs.existsSync(this.screenshotDir)) {
+        const files = fs.readdirSync(this.screenshotDir);
+        screenshots.push(...files.filter(f => f.endsWith('.png')));
+      }
+    } catch (error) {
+      // If we can't read the directory, just return empty screenshots
+      console.warn(`Warning: Could not read screenshot directory: ${error}`);
+    }
+
+    // Parse JSON output for duration and status
+    let duration = 0;
+    try {
+      const output = JSON.parse(result.stdout);
+      if (output.suites && output.suites[0]?.specs?.[0]?.tests?.[0]?.results?.[0]) {
+        duration = output.suites[0].specs[0].tests[0].results[0].duration;
+      }
+    } catch (error) {
+      // If JSON parsing fails, duration stays 0
+    }
+
     return {
       testPath,
       status: 'passed',
-      duration: 0,
-      screenshots: []
+      duration,
+      screenshots
     };
   }
 }
