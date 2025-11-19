@@ -1000,7 +1000,6 @@ describe('RunCommandHandler.handleStoreResults', () => {
       expect.objectContaining({
         verbosity: 'normal',
         outputDir: '/fake/project/.visual-uat/reports',
-        embedImages: false,
         autoOpen: false
       })
     );
@@ -1009,7 +1008,6 @@ describe('RunCommandHandler.handleStoreResults', () => {
       expect.objectContaining({
         verbosity: 'normal',
         outputDir: '/fake/project/.visual-uat/reports',
-        embedImages: false,
         autoOpen: false
       })
     );
@@ -1598,71 +1596,6 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       context.runResult,
       expect.objectContaining({
         verbosity: 'quiet'
-      })
-    );
-  });
-
-  it('should use config.reporters.html.embedImages in reporter options', async () => {
-    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
-    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
-    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
-
-    mockExistsSync.mockReturnValue(false);
-    mockMkdirSync.mockReturnValue(undefined);
-    mockReadFileSync.mockImplementation((path: any) => {
-      if (path.includes('manifest.json')) {
-        return '{}';
-      }
-      return 'Test content';
-    });
-
-    const config: Config = {
-      baseBranch: 'main',
-      specsDir: './tests',
-      generatedDir: './tests/generated',
-      plugins: {
-        testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
-        differ: '@visual-uat/pixelmatch-differ',
-        evaluator: '@visual-uat/claude-evaluator'
-      },
-      targetRunner: {},
-      evaluator: {},
-      reporters: {
-        html: {
-          embedImages: true
-        }
-      }
-    } as Config;
-
-    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
-    const mockSave = jest.fn().mockResolvedValue(undefined);
-    (handler as any).resultStore = { saveRunResult: mockSave };
-
-    const context: ExecutionContext = {
-      scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
-      worktrees: { base: '/base', current: '/current' },
-      baseResults: new Map(),
-      currentResults: new Map(),
-      runResult: {
-        runId: 'test000',
-        timestamp: 1234567890,
-        baseBranch: 'main',
-        currentBranch: 'feature/test',
-        config: config,
-        tests: [],
-        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
-      },
-      keepWorktrees: false
-    };
-
-    const nextState = await (handler as any).handleStoreResults(context);
-
-    expect(nextState).toBe('CLEANUP');
-    expect(mockPlugins.htmlReporter.generate).toHaveBeenCalledWith(
-      context.runResult,
-      expect.objectContaining({
-        embedImages: true
       })
     );
   });

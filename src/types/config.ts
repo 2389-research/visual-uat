@@ -25,7 +25,7 @@ export interface TerminalReporterConfig {
 
 export interface HtmlReporterConfig {
   enabled?: boolean;
-  embedImages?: boolean;
+  // Note: Image embedding (base64) deferred to future enhancement
 }
 
 export interface ReporterConfig {

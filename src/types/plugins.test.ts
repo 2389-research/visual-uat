@@ -83,12 +83,11 @@ describe('Plugin Interfaces', () => {
       const options: ReporterOptions = {
         verbosity: 'normal',
         outputDir: '/path/to/output',
-        embedImages: false,
         autoOpen: false
       };
 
       expect(options.verbosity).toBe('normal');
-      expect(options.embedImages).toBe(false);
+      expect(options.autoOpen).toBe(false);
     });
 
     it('should accept all verbosity levels', () => {

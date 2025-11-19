@@ -60,8 +60,7 @@ describe('Configuration Types', () => {
           defaultVerbosity: 'normal'
         },
         html: {
-          enabled: true,
-          embedImages: false
+          enabled: true
         }
       }
     };
@@ -69,7 +68,6 @@ describe('Configuration Types', () => {
     expect(config.reporters?.terminal?.enabled).toBe(true);
     expect(config.reporters?.terminal?.defaultVerbosity).toBe('normal');
     expect(config.reporters?.html?.enabled).toBe(true);
-    expect(config.reporters?.html?.embedImages).toBe(false);
   });
 
   it('should allow config without reporters field', () => {

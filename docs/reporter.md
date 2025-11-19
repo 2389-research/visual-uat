@@ -171,6 +171,12 @@ Example:
 .visual-uat/reports/2025-11-18-22-51-55-run-abc123.html
 ```
 
+### Images in Reports
+
+HTML reports currently use relative file path references for images (baseline, current, and diff screenshots). The report must be opened from a location where these paths are accessible.
+
+**Future Enhancement:** Base64 image embedding is planned to create fully self-contained HTML reports that can be viewed from any location.
+
 ## CLI Flags
 
 ### Reporter-Related Flags

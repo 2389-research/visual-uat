@@ -432,7 +432,6 @@ export class RunCommandHandler {
       const reporterOptions: ReporterOptions = {
         verbosity: this.getVerbosity(),
         outputDir: path.join(this.projectRoot, '.visual-uat/reports'),
-        embedImages: this.config.reporters?.html?.embedImages || false,
         autoOpen: this.runOptions?.open || false
       };
 

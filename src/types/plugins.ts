@@ -83,7 +83,6 @@ export interface Evaluator {
 export interface ReporterOptions {
   verbosity?: 'quiet' | 'normal' | 'verbose';
   outputDir?: string;
-  embedImages?: boolean;
   autoOpen?: boolean;
 }
 

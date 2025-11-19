@@ -1,5 +1,6 @@
 // ABOUTME: HTML reporter plugin that generates single-page HTML report with test results.
 // ABOUTME: Includes interactive image comparison, filtering, and embedded styling.
+// NOTE: Images use file path references. Base64 embedding deferred to future enhancement.
 
 import { ReporterPlugin, ReporterOptions } from '../types/plugins';
 import { RunResult, TestResult, CheckpointResult } from '../orchestrator/types/results';
