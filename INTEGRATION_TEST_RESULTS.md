@@ -46,7 +46,7 @@ All three verbosity modes validated:
 
 **Sample Output Validated:**
 
-```
+```text
 === Testing Terminal Reporter ===
 
 --- QUIET MODE ---

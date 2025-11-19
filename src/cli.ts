@@ -45,7 +45,7 @@ export function createCLI(): Command {
     .option('--base <branch>', 'Base branch to compare against')
     .option('--fail-fast', 'Stop on first error')
     .option('--keep-worktrees', 'Keep worktrees after execution for debugging')
-    .option('--quiet, -q', 'Terminal reporter quiet mode (minimal output)')
+    .option('--quiet, -q', 'Terminal reporter quiet mode (minimal output, overrides verbose)')
     .option('--verbose, -v', 'Terminal reporter verbose mode (detailed output)')
     .option('--no-html', 'Skip HTML report generation')
     .option('--open, -o', 'Auto-open HTML report in browser after generation')

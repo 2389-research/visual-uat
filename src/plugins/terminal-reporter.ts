@@ -15,6 +15,9 @@ export class TerminalReporter implements ReporterPlugin {
       this.printNormal(result, options);
     } else if (verbosity === 'verbose') {
       this.printVerbose(result, options);
+    } else {
+      // Fallback to normal for invalid values
+      this.printNormal(result, options);
     }
   }
 

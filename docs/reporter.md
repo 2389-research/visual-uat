@@ -15,7 +15,7 @@ The terminal reporter outputs test results to stdout with three configurable ver
 
 Minimal output showing only the summary:
 
-```
+```text
 Visual UAT Complete
   2 passed, 1 needs review, 1 failed
   Report: .visual-uat/reports/2025-11-18-22-51-55-run-abc123.html
@@ -31,7 +31,7 @@ Use quiet mode for:
 
 Shows test-by-test status with summary:
 
-```
+```text
 Running tests: feature/new-ui vs main
   ✓ home-page (2.3s)
   ⚠ contact-form (1.9s) - 8.5% diff, needs review
@@ -52,7 +52,7 @@ Use normal mode for:
 
 Shows detailed checkpoint-level information:
 
-```
+```text
 Running tests: feature/new-ui vs main
   ✓ home-page (2.3s)
       ✓ home-initial: 0.1% diff
@@ -162,12 +162,12 @@ Three viewing modes for comparing baseline vs current screenshots:
 
 HTML reports are saved to `.visual-uat/reports/` with the filename format:
 
-```
+```text
 YYYY-MM-DD-HH-mm-ss-<runId>.html
 ```
 
 Example:
-```
+```text
 .visual-uat/reports/2025-11-18-22-51-55-run-abc123.html
 ```
 

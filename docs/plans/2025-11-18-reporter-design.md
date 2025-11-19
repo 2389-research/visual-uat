@@ -52,7 +52,7 @@ Two default reporter implementations:
 ### Verbosity Modes
 
 **Quiet mode** (`--quiet`):
-```
+```text
 Visual UAT Complete
   5 passed, 2 needs review, 1 failed
   Report: .visual-uat/reports/2024-11-18-143022-a3f7b9.html
@@ -60,7 +60,7 @@ Visual UAT Complete
 ```
 
 **Normal mode** (default):
-```
+```text
 Running tests: feature/login-ui vs main
   ✓ login-flow (1.2s)
   ⚠ dashboard-layout (2.1s) - 2.3% diff, needs review
@@ -326,7 +326,7 @@ When `baselineAvailable: false` in TestResult:
 
 ## File Structure
 
-```
+```text
 src/
   types/
     plugins.ts               # Add ReporterPlugin interface
