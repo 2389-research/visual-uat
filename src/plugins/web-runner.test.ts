@@ -1,12 +1,12 @@
-// ABOUTME: Tests for Playwright-based target runner
+// ABOUTME: Tests for WebRunner generic web server target runner
 // ABOUTME: Validates starting/stopping web servers in isolated environments
 
-import { PlaywrightRunner } from './playwright-runner';
+import { WebRunner } from './web-runner';
 import type { TargetInfo } from '../types/plugins';
 
-describe('PlaywrightRunner', () => {
+describe('WebRunner', () => {
   it('should create runner with config', () => {
-    const runner = new PlaywrightRunner({
+    const runner = new WebRunner({
       startCommand: 'npm start',
       baseUrl: 'http://localhost:3000'
     });
@@ -14,7 +14,7 @@ describe('PlaywrightRunner', () => {
   });
 
   it('should allocate different ports for different branches', async () => {
-    const runner = new PlaywrightRunner({
+    const runner = new WebRunner({
       startCommand: 'npm start',
       baseUrl: 'http://localhost:3000'
     });
