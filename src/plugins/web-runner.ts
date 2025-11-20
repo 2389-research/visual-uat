@@ -1,4 +1,4 @@
-// ABOUTME: Playwright-based target runner for web applications
+// ABOUTME: Generic web server target runner for web applications
 // ABOUTME: Manages starting/stopping dev servers in isolated port-based environments
 
 import type { TargetRunner, TargetInfo } from '../types/plugins';
@@ -6,7 +6,7 @@ import type { TargetRunnerConfig } from '../types/config';
 import { spawn, ChildProcess } from 'child_process';
 import * as net from 'net';
 
-export class PlaywrightRunner implements TargetRunner {
+export class WebRunner implements TargetRunner {
   private config: TargetRunnerConfig;
   private processes: Map<string, ChildProcess> = new Map();
   private portAllocations: Map<string, number> = new Map();
