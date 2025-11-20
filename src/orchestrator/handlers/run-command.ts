@@ -539,6 +539,23 @@ export class RunCommandHandler {
         }
       }
 
+      // Ensure cleanup runs even when handlers return 'FAILED'
+      if (state === 'FAILED') {
+        try {
+          context.serverManager.cleanup();
+        } catch (serverCleanupError) {
+          console.error('Server cleanup error:', serverCleanupError);
+        }
+        if (!context.keepWorktrees && context.worktrees) {
+          try {
+            const worktreeManager = new WorktreeManager(this.projectRoot);
+            worktreeManager.cleanup();
+          } catch (cleanupError) {
+            console.error('Cleanup error:', cleanupError);
+          }
+        }
+      }
+
       return state === 'COMPLETE' ? 0 : 1;
     } catch (error) {
       console.error('Execution error:', error);
