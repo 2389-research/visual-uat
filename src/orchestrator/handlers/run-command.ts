@@ -127,8 +127,7 @@ export class RunCommandHandler {
       // Create worktrees
       const worktreeManager = new WorktreeManager(this.projectRoot);
       context.worktrees = await worktreeManager.createWorktrees(
-        context.scope.baseBranch,
-        currentBranch
+        context.scope.baseBranch
       );
 
       // Start servers

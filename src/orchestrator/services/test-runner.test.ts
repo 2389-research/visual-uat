@@ -34,7 +34,8 @@ describe('TestRunner', () => {
       expect.objectContaining({
         cwd: '/project/root',
         env: expect.objectContaining({
-          SCREENSHOT_DIR: '/screenshots/base'
+          SCREENSHOT_DIR: '/screenshots/base',
+          BASE_URL: 'http://localhost:34567'
         })
       })
     );

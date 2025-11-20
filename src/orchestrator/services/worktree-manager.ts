@@ -13,7 +13,7 @@ export interface WorktreePaths {
 export class WorktreeManager {
   constructor(private projectRoot: string) {}
 
-  async createWorktrees(baseBranch: string, currentBranch: string): Promise<WorktreePaths> {
+  async createWorktrees(baseBranch: string): Promise<WorktreePaths> {
     const basePath = path.join(this.projectRoot, '.worktrees/base');
 
     // Current branch: use the working directory (already checked out)
