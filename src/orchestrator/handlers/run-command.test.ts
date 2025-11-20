@@ -23,7 +23,7 @@ describe('RunCommandHandler - Setup Phase', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -85,7 +85,7 @@ describe('RunCommandHandler - Generation Phase', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -247,7 +247,7 @@ describe('RunCommandHandler.handleSetup', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -354,7 +354,7 @@ describe('RunCommandHandler.handleExecuteBase', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -493,7 +493,7 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -646,7 +646,7 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -870,7 +870,7 @@ describe('RunCommandHandler.handleStoreResults', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -1418,7 +1418,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1482,7 +1482,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1546,7 +1546,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1614,7 +1614,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1683,7 +1683,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1739,7 +1739,7 @@ describe('RunCommandHandler.handleCleanup', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -1847,7 +1847,7 @@ describe('RunCommandHandler.execute', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
