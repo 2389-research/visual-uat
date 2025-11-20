@@ -12,7 +12,7 @@ describe('PluginRegistry', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
