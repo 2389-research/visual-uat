@@ -326,6 +326,9 @@ describe('RunCommandHandler.handleSetup', () => {
     const context: ExecutionContext = {
       scope: null,
       worktrees: null,
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -408,6 +411,9 @@ describe('RunCommandHandler.handleExecuteBase', () => {
         base: '/worktrees/base',
         current: '/worktrees/current'
       },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -460,6 +466,9 @@ describe('RunCommandHandler.handleExecuteBase', () => {
         base: '/worktrees/base',
         current: '/worktrees/current'
       },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -541,6 +550,9 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
         base: '/worktrees/base',
         current: '/worktrees/current'
       },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/login.md', {
           testPath: 'tests/generated/login.spec.ts',
@@ -600,6 +612,9 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
         base: '/worktrees/base',
         current: '/worktrees/current'
       },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/broken.md', {
           testPath: 'tests/generated/broken.spec.ts',
@@ -682,6 +697,9 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: ['tests/login.md'] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/login.md', {
           testPath: 'tests/generated/login.spec.ts',
@@ -752,6 +770,9 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: ['tests/login.md'] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/login.md', {
           testPath: 'tests/generated/login.spec.ts',
@@ -804,6 +825,9 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: ['tests/broken.md'] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/broken.md', {
           testPath: 'tests/generated/broken.spec.ts',
@@ -888,6 +912,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -932,6 +959,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -978,6 +1008,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1041,6 +1074,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1089,6 +1125,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1141,6 +1180,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1193,6 +1235,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1241,6 +1286,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1302,6 +1350,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1387,6 +1438,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1448,6 +1502,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1509,6 +1566,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1575,6 +1635,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1641,6 +1704,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1715,6 +1781,9 @@ describe('RunCommandHandler.handleCleanup', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -1751,6 +1820,9 @@ describe('RunCommandHandler.handleCleanup', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,

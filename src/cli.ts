@@ -2,6 +2,10 @@
 // ABOUTME: CLI entry point for visual-uat tool
 // ABOUTME: Defines commands for test generation, execution, and reporting
 
+// Load environment variables from .env.local (for ANTHROPIC_API_KEY, etc.)
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import { Command } from 'commander';
 import { version } from './index';
 import { loadConfig } from './config/loader';
