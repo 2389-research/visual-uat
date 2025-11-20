@@ -11,6 +11,7 @@ import { WorktreeManager } from '../services/worktree-manager';
 import { TestRunner } from '../services/test-runner';
 import { ResultStore } from '../services/result-store';
 import { generateRunId } from '../services/run-id-generator';
+import { ServerManager, ServerInfo } from '../services/server-manager';
 import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -130,6 +131,13 @@ export class RunCommandHandler {
         currentBranch
       );
 
+      // Start servers
+      const basePort = options.basePort || 34567;
+      const currentPort = options.currentPort || 34568;
+
+      await context.serverManager.startServer(context.worktrees.base, basePort);
+      await context.serverManager.startServer(context.worktrees.current, currentPort);
+
       return 'EXECUTE_BASE';
     } catch (error) {
       console.error('Setup failed:', error);
@@ -145,14 +153,16 @@ export class RunCommandHandler {
         this.projectRoot,
         '.visual-uat/screenshots/base'
       );
-      const runner = new TestRunner(context.worktrees!.base, screenshotDir);
+      // Run tests from project root, not from worktree
+      const runner = new TestRunner(this.projectRoot, screenshotDir, context.baseUrl);
 
       // Get list of generated tests
       const specsToRun = context.scope!.specsToGenerate;
 
       for (const specPath of specsToRun) {
         const baseName = path.basename(specPath, '.md');
-        const testPath = path.join(
+        const testPath = path.resolve(
+          this.projectRoot,
           this.config.generatedDir,
           `${baseName}.spec.ts`
         );
@@ -183,13 +193,14 @@ export class RunCommandHandler {
         this.projectRoot,
         '.visual-uat/screenshots/current'
       );
-      const runner = new TestRunner(context.worktrees!.current, screenshotDir);
+      const runner = new TestRunner(context.worktrees!.current, screenshotDir, context.currentUrl);
 
       const specsToRun = context.scope!.specsToGenerate;
 
       for (const specPath of specsToRun) {
         const baseName = path.basename(specPath, '.md');
-        const testPath = path.join(
+        const testPath = path.resolve(
+          this.projectRoot,
           this.config.generatedDir,
           `${baseName}.spec.ts`
         );
@@ -466,6 +477,9 @@ export class RunCommandHandler {
     context: ExecutionContext
   ): Promise<ExecutionState> {
     try {
+      // Clean up servers first
+      context.serverManager.cleanup();
+
       if (!context.keepWorktrees) {
         const worktreeManager = new WorktreeManager(this.projectRoot);
         worktreeManager.cleanup();
@@ -485,10 +499,16 @@ export class RunCommandHandler {
     // Store runOptions for access by helper methods
     this.runOptions = options;
 
+    const basePort = options.basePort || 34567;
+    const currentPort = options.currentPort || 34568;
+
     let state: ExecutionState = 'SETUP';
     const context: ExecutionContext = {
       scope: null,
       worktrees: null,
+      serverManager: new ServerManager(),
+      baseUrl: `http://localhost:${basePort}`,
+      currentUrl: `http://localhost:${currentPort}`,
       baseResults: new Map<string, RawTestResult>(),
       currentResults: new Map<string, RawTestResult>(),
       runResult: null,
@@ -524,6 +544,12 @@ export class RunCommandHandler {
       console.error('Execution error:', error);
 
       // Attempt cleanup before failing
+      try {
+        context.serverManager.cleanup();
+      } catch (serverCleanupError) {
+        console.error('Server cleanup error:', serverCleanupError);
+      }
+
       if (!context.keepWorktrees && context.worktrees) {
         try {
           const worktreeManager = new WorktreeManager(this.projectRoot);

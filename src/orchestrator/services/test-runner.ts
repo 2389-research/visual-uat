@@ -9,7 +9,8 @@ import { RawTestResult } from '../handlers/execution-states';
 export class TestRunner {
   constructor(
     private worktreePath: string,
-    private screenshotDir: string
+    private screenshotDir: string,
+    private baseUrl: string
   ) {}
 
   runTest(testPath: string): RawTestResult {
@@ -20,7 +21,8 @@ export class TestRunner {
         cwd: this.worktreePath,
         env: {
           ...process.env,
-          SCREENSHOT_DIR: this.screenshotDir
+          SCREENSHOT_DIR: this.screenshotDir,
+          BASE_URL: this.baseUrl
         },
         encoding: 'utf-8'
       }
@@ -37,14 +39,14 @@ export class TestRunner {
     }
 
     if (result.status !== 0) {
-      const errorMessage = result.stderr || 'Test execution failed';
+      const errorMessage = result.stderr || result.stdout || 'Test execution failed';
 
       return {
         testPath,
         status: 'errored',
         duration: 0,
         screenshots: [],
-        error: errorMessage
+        error: `Exit code ${result.status}: ${errorMessage}`
       };
     }
 

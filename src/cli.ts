@@ -49,6 +49,8 @@ export function createCLI(): Command {
     .option('--verbose, -v', 'Terminal reporter verbose mode (detailed output)')
     .option('--no-html', 'Skip HTML report generation')
     .option('--open, -o', 'Auto-open HTML report in browser after generation')
+    .option('--base-port <port>', 'Port for baseline server (default: 34567)', '34567')
+    .option('--current-port <port>', 'Port for current server (default: 34568)', '34568')
     .action(async (options) => {
       try {
         const projectRoot = process.cwd();
@@ -66,7 +68,9 @@ export function createCLI(): Command {
           verbose: options.verbose,
           // Commander negates --no-html to options.html = false
           noHtml: options.html === false,
-          open: options.open
+          open: options.open,
+          basePort: parseInt(options.basePort, 10),
+          currentPort: parseInt(options.currentPort, 10)
         });
         process.exit(exitCode);
       } catch (error) {
