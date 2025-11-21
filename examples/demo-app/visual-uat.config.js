@@ -8,6 +8,9 @@ module.exports = {
     differ: '@visual-uat/pixelmatch-differ',
     evaluator: '@visual-uat/claude-evaluator'
   },
+  targetRunner: {
+    startCommand: 'npm start'
+  },
   evaluator: {
     autoPassThreshold: 0.95,
     autoFailThreshold: 0.3
