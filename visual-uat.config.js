@@ -6,12 +6,12 @@ module.exports = {
   generatedDir: './tests/generated',
   plugins: {
     testGenerator: '@visual-uat/stub-generator',
-    targetRunner: {
-      plugin: '@visual-uat/web-runner',
-      startCommand: 'npx serve -l $PORT examples/demo-app/.visual-uat/reports'
-    },
+    targetRunner: '@visual-uat/web-runner',
     differ: '@visual-uat/pixelmatch-differ',
     evaluator: '@visual-uat/claude-evaluator'
+  },
+  targetRunner: {
+    startCommand: 'npx serve -l $PORT examples/demo-app/.visual-uat/reports'
   },
   evaluator: {
     autoPassThreshold: 0.95,
