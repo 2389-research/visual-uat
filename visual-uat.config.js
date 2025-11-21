@@ -1,0 +1,20 @@
+// ABOUTME: Root-level visual-uat configuration for dogfooding HTML report tests
+// ABOUTME: Configures web-runner to serve generated reports from demo-app
+module.exports = {
+  baseBranch: 'main',
+  specsDir: './tests/specs',
+  generatedDir: './tests/generated',
+  plugins: {
+    testGenerator: '@visual-uat/stub-generator',
+    targetRunner: {
+      plugin: '@visual-uat/web-runner',
+      startCommand: 'npx serve -l $PORT examples/demo-app/.visual-uat/reports'
+    },
+    differ: '@visual-uat/pixelmatch-differ',
+    evaluator: '@visual-uat/claude-evaluator'
+  },
+  evaluator: {
+    autoPassThreshold: 0.95,
+    autoFailThreshold: 0.3
+  }
+};
