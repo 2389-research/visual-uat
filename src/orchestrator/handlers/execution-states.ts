@@ -3,6 +3,7 @@
 
 import { WorktreePaths } from '../services/worktree-manager';
 import { RunResult } from '../types/results';
+import { ServerManager } from '../services/server-manager';
 
 export type ExecutionState =
   | 'SETUP'
@@ -31,6 +32,9 @@ export interface ExecutionScope {
 export interface ExecutionContext {
   scope: ExecutionScope | null;
   worktrees: WorktreePaths | null;
+  serverManager: ServerManager;
+  baseUrl: string;
+  currentUrl: string;
   baseResults: Map<string, RawTestResult>;
   currentResults: Map<string, RawTestResult>;
   runResult: RunResult | null;

@@ -18,6 +18,8 @@ export interface RunOptions {
   verbose?: boolean;
   noHtml?: boolean;
   open?: boolean;
+  basePort?: number;
+  currentPort?: number;
 }
 
 export class ChangeDetector {

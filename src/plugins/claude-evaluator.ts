@@ -9,9 +9,17 @@ export class ClaudeEvaluator implements Evaluator {
   private client: Anthropic;
   private config: EvaluatorConfig;
 
-  constructor(apiKey: string, config: EvaluatorConfig) {
-    this.client = new Anthropic({ apiKey });
-    this.config = config;
+  constructor(fullConfig: any) {
+    // Extract evaluator config
+    this.config = fullConfig.evaluator || {};
+
+    // Anthropic SDK automatically reads from ANTHROPIC_API_KEY env var
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.warn('Warning: ANTHROPIC_API_KEY not set - LLM evaluation will fail');
+    }
+
+    // Don't pass apiKey - let SDK read from environment automatically
+    this.client = new Anthropic();
   }
 
   async evaluate(input: EvaluationInput): Promise<EvaluationResult> {
@@ -46,7 +54,7 @@ export class ClaudeEvaluator implements Evaluator {
 
     try {
       const message = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-haiku-4-5',
         max_tokens: 1024,
         messages: [{
           role: 'user',
@@ -141,12 +149,16 @@ Be strict: only pass if changes clearly align with intent.`;
 
   private determineNeedsReview(confidence: number, pass: boolean): boolean {
     const autoPassThreshold = this.config.autoPassThreshold || 0.95;
-    const autoFailThreshold = this.config.autoFailThreshold || 0.3;
+    const autoFailThreshold = this.config.autoFailThreshold || 0.95;
 
+    // High confidence in pass → auto-pass (no review)
     if (pass && confidence >= autoPassThreshold) return false;
-    if (!pass && confidence <= autoFailThreshold) return false;
 
-    return true; // Between thresholds - needs manual review
+    // High confidence in fail → auto-fail (no review)
+    if (!pass && confidence >= autoFailThreshold) return false;
+
+    // Low/medium confidence → needs manual review
+    return true;
   }
 
   private noChangesExpected(intent: string): boolean {

@@ -23,7 +23,7 @@ describe('RunCommandHandler - Setup Phase', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -85,7 +85,7 @@ describe('RunCommandHandler - Generation Phase', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -247,7 +247,7 @@ describe('RunCommandHandler.handleSetup', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -326,6 +326,9 @@ describe('RunCommandHandler.handleSetup', () => {
     const context: ExecutionContext = {
       scope: null,
       worktrees: null,
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -337,6 +340,52 @@ describe('RunCommandHandler.handleSetup', () => {
     expect(nextState).toBe('EXECUTE_BASE');
     expect(context.worktrees).not.toBeNull();
     expect(mockCreateWorktrees).toHaveBeenCalled();
+  });
+
+  it('should return FAILED when base and current ports are the same', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    mockExistsSync.mockReturnValue(true);
+
+    const mockCreateWorktrees = jest.fn().mockResolvedValue({
+      base: '/worktrees/base',
+      current: '/project/root'
+    });
+
+    (WorktreeManager as jest.Mock).mockImplementation(() => ({
+      createWorktrees: mockCreateWorktrees
+    }));
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    const context: ExecutionContext = {
+      scope: {
+        type: 'full',
+        baseBranch: 'main',
+        specsToGenerate: ['tests/login.md']
+      },
+      worktrees: null,
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34567",
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    const nextState = await (handler as any).handleSetup(context, { basePort: 8080, currentPort: 8080 });
+
+    expect(nextState).toBe('FAILED');
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Setup failed:',
+      expect.objectContaining({
+        message: expect.stringContaining('Base port and current port cannot be the same')
+      })
+    );
+
+    consoleErrorSpy.mockRestore();
   });
 });
 
@@ -351,7 +400,7 @@ describe('RunCommandHandler.handleExecuteBase', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -408,6 +457,9 @@ describe('RunCommandHandler.handleExecuteBase', () => {
         base: '/worktrees/base',
         current: '/worktrees/current'
       },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -460,6 +512,9 @@ describe('RunCommandHandler.handleExecuteBase', () => {
         base: '/worktrees/base',
         current: '/worktrees/current'
       },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -484,7 +539,7 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -541,6 +596,9 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
         base: '/worktrees/base',
         current: '/worktrees/current'
       },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/login.md', {
           testPath: 'tests/generated/login.spec.ts',
@@ -600,6 +658,9 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
         base: '/worktrees/base',
         current: '/worktrees/current'
       },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/broken.md', {
           testPath: 'tests/generated/broken.spec.ts',
@@ -631,7 +692,7 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -682,6 +743,9 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: ['tests/login.md'] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/login.md', {
           testPath: 'tests/generated/login.spec.ts',
@@ -752,6 +816,9 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: ['tests/login.md'] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/login.md', {
           testPath: 'tests/generated/login.spec.ts',
@@ -804,6 +871,9 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: ['tests/broken.md'] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map([
         ['tests/broken.md', {
           testPath: 'tests/generated/broken.spec.ts',
@@ -846,7 +916,7 @@ describe('RunCommandHandler.handleStoreResults', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -888,6 +958,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -932,6 +1005,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -978,6 +1054,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1041,6 +1120,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1089,6 +1171,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1141,6 +1226,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1193,6 +1281,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1241,6 +1332,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1302,6 +1396,9 @@ describe('RunCommandHandler.handleStoreResults', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1367,7 +1464,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1387,6 +1484,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1428,7 +1528,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1448,6 +1548,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1489,7 +1592,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1509,6 +1612,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1554,7 +1660,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1575,6 +1681,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1620,7 +1729,7 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       },
@@ -1641,6 +1750,9 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1673,7 +1785,7 @@ describe('RunCommandHandler.handleCleanup', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }
@@ -1715,6 +1827,9 @@ describe('RunCommandHandler.handleCleanup', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -1751,6 +1866,9 @@ describe('RunCommandHandler.handleCleanup', () => {
     const context: ExecutionContext = {
       scope: { type: 'full', baseBranch: 'main', specsToGenerate: [] },
       worktrees: { base: '/base', current: '/current' },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -1775,7 +1893,7 @@ describe('RunCommandHandler.execute', () => {
       generatedDir: './tests/generated',
       plugins: {
         testGenerator: '@visual-uat/stub-generator',
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         differ: '@visual-uat/pixelmatch-differ',
         evaluator: '@visual-uat/claude-evaluator'
       }

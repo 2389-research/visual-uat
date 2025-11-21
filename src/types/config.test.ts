@@ -10,7 +10,7 @@ describe('Configuration Types', () => {
       specsDir: './tests',
       generatedDir: './tests/generated',
       plugins: {
-        targetRunner: '@visual-uat/playwright-runner',
+        targetRunner: '@visual-uat/web-runner',
         testGenerator: '@visual-uat/llm-generator',
         differ: '@visual-uat/pixelmatch',
         evaluator: '@visual-uat/llm-evaluator'

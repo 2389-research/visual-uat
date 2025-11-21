@@ -310,6 +310,35 @@ export class HTMLReporter implements ReporterPlugin {
       margin: 0 auto;
       border-radius: 4px;
     }
+    .side-by-side-container {
+      display: flex;
+      gap: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .side-by-side-image {
+      flex: 1;
+      min-width: 400px;
+      max-width: 800px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .side-by-side-image img {
+      width: 100%;
+      display: block;
+      border-radius: 4px;
+    }
+    .image-label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      padding: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -421,6 +450,17 @@ export class HTMLReporter implements ReporterPlugin {
              onchange="updateSlider(this)" oninput="updateSlider(this)">
 
       <img src="${this.escapeHTML(checkpoint.diffImage)}" class="diff-img" style="display: none;" alt="Diff" loading="lazy">
+
+      <div class="side-by-side-container" style="display: none;">
+        <div class="side-by-side-image">
+          <div class="image-label">Baseline</div>
+          <img src="${this.escapeHTML(checkpoint.baselineImage)}" alt="Baseline" loading="lazy">
+        </div>
+        <div class="side-by-side-image">
+          <div class="image-label">Current</div>
+          <img src="${this.escapeHTML(checkpoint.currentImage)}" alt="Current" loading="lazy">
+        </div>
+      </div>
     </div>
   `;
   }
@@ -541,6 +581,7 @@ export class HTMLReporter implements ReporterPlugin {
       const container = comparison.querySelector('.comparison-container');
       const slider = comparison.querySelector('.slider');
       const diffImg = comparison.querySelector('.diff-img');
+      const sideBySide = comparison.querySelector('.side-by-side-container');
       const buttons = comparison.querySelectorAll('.view-modes button');
 
       // Update active button
@@ -551,12 +592,17 @@ export class HTMLReporter implements ReporterPlugin {
         container.style.display = 'block';
         slider.style.display = 'block';
         diffImg.style.display = 'none';
+        sideBySide.style.display = 'none';
       } else if (mode === 'diff') {
         container.style.display = 'none';
         slider.style.display = 'none';
         diffImg.style.display = 'block';
+        sideBySide.style.display = 'none';
       } else if (mode === 'side-by-side') {
-        alert('Side-by-side view coming soon');
+        container.style.display = 'none';
+        slider.style.display = 'none';
+        diffImg.style.display = 'none';
+        sideBySide.style.display = 'flex';
       }
     }
   </script>`;

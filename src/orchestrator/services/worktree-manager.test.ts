@@ -18,45 +18,48 @@ describe('WorktreeManager', () => {
   });
 
   describe('createWorktrees', () => {
-    it('should create worktrees for base and current branches', async () => {
+    it('should create worktree for base branch and use working directory for current', async () => {
       mockSpawnSync.mockReturnValue({ status: 0, error: undefined } as any);
       const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
       mockExistsSync.mockReturnValue(true); // package.json exists
 
-      const paths = await manager.createWorktrees('main', 'feature/test');
+      const paths = await manager.createWorktrees('main');
 
+      // Should only create base worktree
       expect(mockSpawnSync).toHaveBeenCalledWith(
         'git',
         ['worktree', 'add', '.worktrees/base', 'main'],
         expect.any(Object)
       );
-      expect(mockSpawnSync).toHaveBeenCalledWith(
+
+      // Should NOT create current worktree
+      expect(mockSpawnSync).not.toHaveBeenCalledWith(
         'git',
         ['worktree', 'add', '.worktrees/current', 'feature/test'],
         expect.any(Object)
       );
 
       expect(paths.base).toContain('.worktrees/base');
-      expect(paths.current).toContain('.worktrees/current');
+      expect(paths.current).toBe(projectRoot); // Uses working directory
     });
 
-    it('should run npm install in each worktree', async () => {
+    it('should run npm install in base worktree only', async () => {
       mockSpawnSync.mockReturnValue({ status: 0, error: undefined } as any);
       const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
       mockExistsSync.mockReturnValue(true);
 
-      await manager.createWorktrees('main', 'feature/test');
+      await manager.createWorktrees('main');
 
+      // Should run npm install in base worktree
       expect(mockSpawnSync).toHaveBeenCalledWith(
         'npm',
         ['install'],
         expect.objectContaining({ cwd: expect.stringContaining('.worktrees/base') })
       );
-      expect(mockSpawnSync).toHaveBeenCalledWith(
-        'npm',
-        ['install'],
-        expect.objectContaining({ cwd: expect.stringContaining('.worktrees/current') })
-      );
+
+      // Should NOT run npm install in current (uses working directory with existing deps)
+      const npmCalls = mockSpawnSync.mock.calls.filter(call => call[0] === 'npm');
+      expect(npmCalls).toHaveLength(1); // Only one npm install call
     });
 
     it('should skip npm install if package.json does not exist', async () => {
@@ -64,7 +67,7 @@ describe('WorktreeManager', () => {
       const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
       mockExistsSync.mockReturnValue(false);
 
-      await manager.createWorktrees('main', 'feature/test');
+      await manager.createWorktrees('main');
 
       const npmInstallCalls = mockSpawnSync.mock.calls.filter(
         call => call[0] === 'npm'
@@ -78,7 +81,7 @@ describe('WorktreeManager', () => {
         error: new Error('git worktree failed')
       } as any);
 
-      await expect(manager.createWorktrees('main', 'feature/test'))
+      await expect(manager.createWorktrees('main'))
         .rejects.toThrow('Failed to create base worktree');
     });
 
@@ -88,40 +91,28 @@ describe('WorktreeManager', () => {
 
       mockSpawnSync
         .mockReturnValueOnce({ status: 0, error: undefined } as any) // git worktree add base - success
-        .mockReturnValueOnce({ status: 0, error: undefined } as any) // git worktree add current - success
         .mockReturnValueOnce({ status: 1, error: undefined } as any); // npm install base - fail
 
-      await expect(manager.createWorktrees('main', 'feature/test'))
+      await expect(manager.createWorktrees('main'))
         .rejects.toThrow('npm install failed in base worktree');
-    });
-
-    it('should throw error if npm install fails in current worktree', async () => {
-      const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
-      mockExistsSync.mockReturnValue(true);
-
-      mockSpawnSync
-        .mockReturnValueOnce({ status: 0, error: undefined } as any) // git worktree add base - success
-        .mockReturnValueOnce({ status: 0, error: undefined } as any) // git worktree add current - success
-        .mockReturnValueOnce({ status: 0, error: undefined } as any) // npm install base - success
-        .mockReturnValueOnce({ status: 1, error: undefined } as any); // npm install current - fail
-
-      await expect(manager.createWorktrees('main', 'feature/test'))
-        .rejects.toThrow('npm install failed in current worktree');
     });
   });
 
   describe('cleanup', () => {
-    it('should remove worktrees', () => {
+    it('should remove base worktree only', () => {
       mockSpawnSync.mockReturnValue({ status: 0, error: undefined } as any);
 
       manager.cleanup();
 
+      // Should remove base worktree
       expect(mockSpawnSync).toHaveBeenCalledWith(
         'git',
         ['worktree', 'remove', '.worktrees/base'],
         expect.any(Object)
       );
-      expect(mockSpawnSync).toHaveBeenCalledWith(
+
+      // Should NOT remove current worktree (uses working directory)
+      expect(mockSpawnSync).not.toHaveBeenCalledWith(
         'git',
         ['worktree', 'remove', '.worktrees/current'],
         expect.any(Object)
@@ -131,8 +122,7 @@ describe('WorktreeManager', () => {
     it('should force remove if normal removal fails', () => {
       mockSpawnSync
         .mockReturnValueOnce({ status: 1, error: undefined } as any) // First remove fails
-        .mockReturnValueOnce({ status: 0, error: undefined } as any) // Force remove succeeds
-        .mockReturnValue({ status: 0, error: undefined } as any); // Current worktree removes succeed
+        .mockReturnValueOnce({ status: 0, error: undefined } as any); // Force remove succeeds
 
       manager.cleanup();
 

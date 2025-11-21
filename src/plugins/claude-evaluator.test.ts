@@ -5,38 +5,56 @@ import { ClaudeEvaluator } from './claude-evaluator';
 import type { EvaluationInput, DiffResult } from '../types/plugins';
 
 describe('ClaudeEvaluator', () => {
-  // Mock API key for testing
-  const apiKey = process.env.ANTHROPIC_API_KEY || 'test-key';
+  // Set API key for testing
+  const originalKey = process.env.ANTHROPIC_API_KEY;
+  beforeAll(() => {
+    process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'test-key';
+  });
+  afterAll(() => {
+    if (originalKey) {
+      process.env.ANTHROPIC_API_KEY = originalKey;
+    } else {
+      delete process.env.ANTHROPIC_API_KEY;
+    }
+  });
 
   it('should create evaluator with thresholds', () => {
-    const evaluator = new ClaudeEvaluator(apiKey, {
-      autoPassThreshold: 0.95,
-      autoFailThreshold: 0.3
+    const evaluator = new ClaudeEvaluator({
+      evaluator: {
+        autoPassThreshold: 0.95,
+        autoFailThreshold: 0.3
+      }
     });
     expect(evaluator).toBeDefined();
   });
 
   it('should determine needsReview based on confidence', async () => {
-    const evaluator = new ClaudeEvaluator(apiKey, {
-      autoPassThreshold: 0.95,
-      autoFailThreshold: 0.3
+    const evaluator = new ClaudeEvaluator({
+      evaluator: {
+        autoPassThreshold: 0.95,
+        autoFailThreshold: 0.95
+      }
     });
 
-    // Test high confidence
-    const highConfResult = evaluator['determineNeedsReview'](0.96, true);
-    expect(highConfResult).toBe(false);
+    // Test high confidence pass → auto-pass (no review)
+    const highConfPassResult = evaluator['determineNeedsReview'](0.96, true);
+    expect(highConfPassResult).toBe(false);
 
-    // Test low confidence
+    // Test high confidence fail → auto-fail (no review)
+    const highConfFailResult = evaluator['determineNeedsReview'](0.96, false);
+    expect(highConfFailResult).toBe(false);
+
+    // Test low confidence fail → needs review
     const lowConfResult = evaluator['determineNeedsReview'](0.25, false);
-    expect(lowConfResult).toBe(false);
+    expect(lowConfResult).toBe(true);
 
-    // Test medium confidence
+    // Test medium confidence pass → needs review
     const medConfResult = evaluator['determineNeedsReview'](0.5, true);
     expect(medConfResult).toBe(true);
   });
 
   it('should handle identical images without API call', async () => {
-    const evaluator = new ClaudeEvaluator(apiKey, {});
+    const evaluator = new ClaudeEvaluator({ evaluator: {} });
 
     const input: EvaluationInput = {
       intent: 'Test intent',

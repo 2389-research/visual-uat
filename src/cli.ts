@@ -2,6 +2,10 @@
 // ABOUTME: CLI entry point for visual-uat tool
 // ABOUTME: Defines commands for test generation, execution, and reporting
 
+// Load environment variables from .env.local (for ANTHROPIC_API_KEY, etc.)
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import { Command } from 'commander';
 import { version } from './index';
 import { loadConfig } from './config/loader';
@@ -49,6 +53,18 @@ export function createCLI(): Command {
     .option('--verbose, -v', 'Terminal reporter verbose mode (detailed output)')
     .option('--no-html', 'Skip HTML report generation')
     .option('--open, -o', 'Auto-open HTML report in browser after generation')
+    .option(
+      '--base-port <port>',
+      'Port for baseline server (default: 34567)',
+      (value) => parseInt(value, 10),
+      34567
+    )
+    .option(
+      '--current-port <port>',
+      'Port for current server (default: 34568)',
+      (value) => parseInt(value, 10),
+      34568
+    )
     .action(async (options) => {
       try {
         const projectRoot = process.cwd();
@@ -66,7 +82,9 @@ export function createCLI(): Command {
           verbose: options.verbose,
           // Commander negates --no-html to options.html = false
           noHtml: options.html === false,
-          open: options.open
+          open: options.open,
+          basePort: options.basePort,
+          currentPort: options.currentPort
         });
         process.exit(exitCode);
       } catch (error) {

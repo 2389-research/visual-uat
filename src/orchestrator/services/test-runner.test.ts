@@ -12,7 +12,7 @@ describe('TestRunner', () => {
   let runner: TestRunner;
 
   beforeEach(() => {
-    runner = new TestRunner('/project/root', '/screenshots/base');
+    runner = new TestRunner('/project/root', '/screenshots/base', 'http://localhost:34567');
     jest.clearAllMocks();
   });
 
@@ -34,7 +34,8 @@ describe('TestRunner', () => {
       expect.objectContaining({
         cwd: '/project/root',
         env: expect.objectContaining({
-          SCREENSHOT_DIR: '/screenshots/base'
+          SCREENSHOT_DIR: '/screenshots/base',
+          BASE_URL: 'http://localhost:34567'
         })
       })
     );
@@ -51,7 +52,7 @@ describe('TestRunner', () => {
     const result = runner.runTest('tests/generated/broken.spec.ts');
 
     expect(result.status).toBe('errored');
-    expect(result.error).toBe('Test failed');
+    expect(result.error).toBe('Exit code 1: Test failed');
   });
 
   it('should return errored result on spawn error', () => {

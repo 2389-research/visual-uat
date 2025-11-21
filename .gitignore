@@ -2,3 +2,4 @@
 .visual-uat/
 node_modules/
 dist/
+.env.local
