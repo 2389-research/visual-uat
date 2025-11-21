@@ -14,7 +14,7 @@ export class WorktreeManager {
   constructor(private projectRoot: string) {}
 
   async createWorktrees(baseBranch: string): Promise<WorktreePaths> {
-    const basePath = path.join(this.projectRoot, '.worktrees/base');
+    let basePath = path.join(this.projectRoot, '.worktrees/base');
 
     // Current branch: use the working directory (already checked out)
     // Only create worktree for base branch
@@ -23,11 +23,21 @@ export class WorktreeManager {
     // Create base worktree - using spawnSync with array args prevents shell injection
     const baseResult = spawnSync('git', ['worktree', 'add', '.worktrees/base', baseBranch], {
       cwd: this.projectRoot,
-      stdio: 'inherit'
+      stdio: 'pipe'
     });
 
     if (baseResult.error || baseResult.status !== 0) {
-      throw new Error(`Failed to create base worktree: ${baseResult.error?.message || 'git command failed'}`);
+      // Check if the branch is already checked out in an existing worktree
+      const stderr = baseResult.stderr?.toString() || '';
+      const alreadyUsedMatch = stderr.match(/already used by worktree at '([^']+)'/);
+
+      if (alreadyUsedMatch) {
+        // The base branch is already checked out somewhere, use that path
+        basePath = alreadyUsedMatch[1];
+        console.log(`Base branch '${baseBranch}' already checked out at ${basePath}, reusing existing checkout`);
+      } else {
+        throw new Error(`Failed to create base worktree: ${baseResult.error?.message || stderr || 'git command failed'}`);
+      }
     }
 
     // Install dependencies in base worktree if package.json exists
