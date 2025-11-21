@@ -13,7 +13,9 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "setup:dogfood": "cd examples/demo-app && npx visual-uat run",
+    "test:dogfood": "npx visual-uat run"
   },
   "keywords": [
     "testing",
