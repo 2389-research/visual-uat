@@ -13,7 +13,10 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "start": "cd examples/demo-app && npm start",
+    "setup:dogfood": "cd examples/demo-app && npx visual-uat run",
+    "test:dogfood": "npx visual-uat run"
   },
   "keywords": [
     "testing",
