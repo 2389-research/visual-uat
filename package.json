@@ -35,6 +35,7 @@
     "pngjs": "^7.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@types/jest": "^29.5.0",
     "@types/node": "^20.10.0",
     "@types/pixelmatch": "^5.2.6",
