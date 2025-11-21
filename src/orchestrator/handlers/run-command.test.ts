@@ -341,6 +341,52 @@ describe('RunCommandHandler.handleSetup', () => {
     expect(context.worktrees).not.toBeNull();
     expect(mockCreateWorktrees).toHaveBeenCalled();
   });
+
+  it('should return FAILED when base and current ports are the same', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    mockExistsSync.mockReturnValue(true);
+
+    const mockCreateWorktrees = jest.fn().mockResolvedValue({
+      base: '/worktrees/base',
+      current: '/project/root'
+    });
+
+    (WorktreeManager as jest.Mock).mockImplementation(() => ({
+      createWorktrees: mockCreateWorktrees
+    }));
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    const context: ExecutionContext = {
+      scope: {
+        type: 'full',
+        baseBranch: 'main',
+        specsToGenerate: ['tests/login.md']
+      },
+      worktrees: null,
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34567",
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    const nextState = await (handler as any).handleSetup(context, { basePort: 8080, currentPort: 8080 });
+
+    expect(nextState).toBe('FAILED');
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Setup failed:',
+      expect.objectContaining({
+        message: expect.stringContaining('Base port and current port cannot be the same')
+      })
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
 });
 
 describe('RunCommandHandler.handleExecuteBase', () => {

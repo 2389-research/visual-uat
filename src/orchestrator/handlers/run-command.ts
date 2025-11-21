@@ -134,6 +134,13 @@ export class RunCommandHandler {
       const basePort = options.basePort || 34567;
       const currentPort = options.currentPort || 34568;
 
+      if (basePort === currentPort) {
+        throw new Error(
+          `Base port and current port cannot be the same (both are ${basePort}). ` +
+          `Please specify different ports using --base-port and --current-port options.`
+        );
+      }
+
       await context.serverManager.startServer(context.worktrees.base, basePort);
       await context.serverManager.startServer(context.worktrees.current, currentPort);
 
