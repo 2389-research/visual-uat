@@ -60,23 +60,32 @@ export class HTMLReporter implements ReporterPlugin {
     }
     .filter-bar {
       background: white;
-      padding: 15px 20px;
+      padding: 20px;
       border-radius: 8px;
-      margin-bottom: 20px;
+      margin-bottom: 5px;
     }
     .filter-bar-label {
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      color: #6b7280;
-      margin-bottom: 10px;
-      letter-spacing: 0.5px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 12px;
+      letter-spacing: 0.025em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-bar-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
     }
     .filter-controls {
       display: flex;
       border: 1px solid #e5e7eb;
       border-radius: 6px;
-      overflow: hidden;
+      overflow: visible;
+      position: relative;
     }
     .filter-buttons {
       display: flex;
@@ -204,7 +213,7 @@ export class HTMLReporter implements ReporterPlugin {
       opacity: 1;
     }
     .tests {
-      margin-top: 20px;
+      margin-top: 0;
     }
     .test-card {
       background: white;
