@@ -105,6 +105,10 @@ export class HTMLReporter implements ReporterPlugin {
       white-space: nowrap;
       position: relative;
     }
+    .filter-button:first-child {
+      border-top-left-radius: 6px;
+      border-bottom-left-radius: 6px;
+    }
     .filter-button:last-of-type {
       border-right: none;
     }
@@ -176,6 +180,7 @@ export class HTMLReporter implements ReporterPlugin {
       background: white;
       font-size: 14px;
       outline: none;
+      box-sizing: border-box;
     }
     #search-input::placeholder {
       color: #9ca3af;
@@ -197,6 +202,7 @@ export class HTMLReporter implements ReporterPlugin {
       pointer-events: none;
       transition: opacity 0.2s;
       z-index: 1000;
+      min-width: 200px;
       max-width: 300px;
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
     }
