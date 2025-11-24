@@ -58,11 +58,16 @@ export class HTMLReporter implements ReporterPlugin {
     .status-banner {
       /* Inline styles in HTML, no additional CSS needed */
     }
-    .filter-bar {
+    .results-container {
       background: white;
       padding: 20px;
       border-radius: 8px;
-      margin-bottom: 5px;
+      margin-bottom: 20px;
+    }
+    .filter-bar {
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 20px;
     }
     .filter-bar-label {
       font-size: 14px;
@@ -216,6 +221,14 @@ export class HTMLReporter implements ReporterPlugin {
       border-top-color: #1f2937;
     }
     .filter-button:hover .tooltip {
+      opacity: 1;
+    }
+    .run-id-container {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+    .run-id-container:hover .tooltip {
       opacity: 1;
     }
     .tests {
@@ -418,10 +431,12 @@ export class HTMLReporter implements ReporterPlugin {
 <body>
   ${this.generateStatusBanner(result)}
 
-  ${filterBarHTML}
+  <div class="results-container">
+    ${filterBarHTML}
 
-  <div class="tests">
-    ${testCardsHTML}
+    <div class="tests">
+      ${testCardsHTML}
+    </div>
   </div>
 
   ${scriptHTML}
@@ -731,7 +746,10 @@ export class HTMLReporter implements ReporterPlugin {
       </div>
       <div style="text-align: right; opacity: 0.9; font-size: 14px;">
         <div><strong>${totalTests} tests</strong></div>
-        <div title="${this.escapeHTML(result.runId)}">Run ID: ${result.runId.slice(-6)}</div>
+        <div class="run-id-container">
+          Run ID: ${result.runId.slice(-6)}
+          <div class="tooltip">${this.escapeHTML(result.runId)}</div>
+        </div>
         <div>${new Date(result.timestamp).toLocaleString()}</div>
       </div>
     </div>
