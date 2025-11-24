@@ -149,15 +149,26 @@ export class FeatureMatcher {
 
   private hashSimilarity(hash1: string, hash2: string): number {
     if (hash1 === hash2) return 1.0;
-    if (hash1.length !== hash2.length) return 0;
 
-    // Hamming distance for bit strings
+    const [percepHash1, colorChecksum1] = hash1.split(':');
+    const [percepHash2, colorChecksum2] = hash2.split(':');
+
+    if (!percepHash1 || !percepHash2 || percepHash1.length !== percepHash2.length) return 0;
+
+    // Hamming distance for perceptual hash
     let matches = 0;
-    for (let i = 0; i < hash1.length; i++) {
-      if (hash1[i] === hash2[i]) matches++;
+    for (let i = 0; i < percepHash1.length; i++) {
+      if (percepHash1[i] === percepHash2[i]) matches++;
     }
+    const percepSimilarity = matches / percepHash1.length;
 
-    return matches / hash1.length;
+    // Compare color checksums (exact match for now)
+    const colorMatch = colorChecksum1 === colorChecksum2 ? 1.0 : 0.0;
+
+    // Weight: 80% perceptual hash, 20% color
+    // Note: Color mismatch contributes 0, so max similarity with different colors is 0.8
+    // This prevents false matches of solid-color blocks with different colors
+    return percepSimilarity * 0.8 + colorMatch * 0.2;
   }
 
   private buildRegions(
