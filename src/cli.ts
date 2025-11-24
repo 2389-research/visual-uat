@@ -2,6 +2,29 @@
 // ABOUTME: CLI entry point for visual-uat tool
 // ABOUTME: Defines commands for test generation, execution, and reporting
 
+import { spawnSync } from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
+
+// When running from a worktree, copy .env.local from main checkout
+// This ensures environment variables (like ANTHROPIC_API_KEY) are available
+const gitCommonDirResult = spawnSync('git', ['rev-parse', '--git-common-dir'], {
+  encoding: 'utf-8',
+  stdio: 'pipe'
+});
+
+if (gitCommonDirResult.status === 0) {
+  const gitCommonDir = gitCommonDirResult.stdout.trim();
+  const mainCheckout = path.dirname(gitCommonDir);
+  const envSource = path.join(mainCheckout, '.env.local');
+  const envLocal = path.join(process.cwd(), '.env.local');
+
+  // Copy .env.local if it exists in main checkout but not in current directory
+  if (fs.existsSync(envSource) && !fs.existsSync(envLocal) && envSource !== envLocal) {
+    fs.copyFileSync(envSource, envLocal);
+  }
+}
+
 // Load environment variables from .env.local (for ANTHROPIC_API_KEY, etc.)
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });

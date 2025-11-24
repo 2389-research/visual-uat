@@ -14,9 +14,13 @@ export class TestRunner {
   ) {}
 
   runTest(testPath: string): RawTestResult {
+    // Convert absolute test path to relative path from worktree
+    // Playwright requires relative paths when running with cwd
+    const relativeTestPath = path.relative(this.worktreePath, testPath);
+
     const result = spawnSync(
       'npx',
-      ['playwright', 'test', testPath, '--reporter=json'],
+      ['playwright', 'test', relativeTestPath, '--reporter=json'],
       {
         cwd: this.worktreePath,
         env: {

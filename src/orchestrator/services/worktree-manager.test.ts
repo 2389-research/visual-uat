@@ -75,9 +75,36 @@ describe('WorktreeManager', () => {
       expect(npmInstallCalls).toHaveLength(0);
     });
 
-    it('should throw error if git worktree fails', async () => {
+    it('should reuse existing checkout if base branch is already checked out', async () => {
+      const existingPath = '/fake/project/main-working-tree';
+      const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+      mockExistsSync.mockReturnValue(true);
+
+      mockSpawnSync
+        .mockReturnValueOnce({
+          status: 1,
+          stderr: Buffer.from(`fatal: 'main' is already used by worktree at '${existingPath}'`),
+          error: undefined
+        } as any) // git worktree add - fails with "already used"
+        .mockReturnValueOnce({ status: 0, error: undefined } as any); // npm install - succeeds
+
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      const paths = await manager.createWorktrees('main');
+
+      expect(paths.base).toBe(existingPath);
+      expect(paths.current).toBe(projectRoot);
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`Base branch 'main' already checked out at ${existingPath}`)
+      );
+
+      consoleLogSpy.mockRestore();
+    });
+
+    it('should throw error if git worktree fails for other reasons', async () => {
       mockSpawnSync.mockReturnValueOnce({
         status: 1,
+        stderr: Buffer.from('fatal: some other git error'),
         error: new Error('git worktree failed')
       } as any);
 
