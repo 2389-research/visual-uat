@@ -75,7 +75,7 @@ export class HTMLReporter implements ReporterPlugin {
     }
     .filter-button {
       padding: 10px 20px;
-      border: 2px solid transparent;
+      border: 1px solid transparent;
       border-radius: 0;
       background: #f3f4f6;
       color: #6b7280;
@@ -85,13 +85,17 @@ export class HTMLReporter implements ReporterPlugin {
       transition: all 0.2s;
       white-space: nowrap;
     }
+    .filter-button:not(:first-child):not(:last-child) {
+      border-left: none;
+      border-right: none;
+    }
     .filter-button:first-child {
-      border-top-left-radius: 20px;
-      border-bottom-left-radius: 20px;
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
     }
     .filter-button:last-child {
-      border-top-right-radius: 20px;
-      border-bottom-right-radius: 20px;
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
     }
     .filter-button:hover:not(:disabled) {
       transform: translateY(-1px);
