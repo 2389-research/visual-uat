@@ -89,7 +89,7 @@ describe('HTMLReporter', () => {
     expect(content).toContain('a3f7b9c');
   });
 
-  it('should include summary boxes with counts', async () => {
+  it('should include status banner and filter buttons with counts', async () => {
     const reporter = new HTMLReporter();
     const result: RunResult = {
       runId: 'a3f7b9c',
@@ -107,18 +107,17 @@ describe('HTMLReporter', () => {
     const htmlFile = path.join(testOutputDir, files[0]);
     const content = fs.readFileSync(htmlFile, 'utf-8');
 
-    // Verify counts are in proper HTML context
-    expect(content).toContain('<div class="count">5</div>');
-    expect(content).toContain('<div class="count">2</div>');
-    expect(content).toContain('<div class="count">1</div>');
+    // Verify status banner is present
+    expect(content).toContain('class="status-banner"');
+    expect(content).toContain('feature/test');
+    expect(content).toContain('main');
 
-    // Verify labels are present
-    expect(content).toContain('<div class="label">Passed</div>');
-    expect(content).toContain('<div class="label">Needs Review</div>');
-    expect(content).toContain('<div class="label">Failed</div>');
-    expect(content).toContain('<div class="label">Errored</div>');
-
-    expect(content).toContain('class="summary-box');
+    // Verify filter buttons with counts
+    expect(content).toContain('Passed (5)');
+    expect(content).toContain('Needs Review (2)');
+    expect(content).toContain('Failed (2)');
+    expect(content).toContain('Errored (1)');
+    expect(content).toContain('All (10)');
   });
 
   it('should list all tests with status', async () => {
@@ -184,7 +183,9 @@ describe('HTMLReporter', () => {
     expect(content).toContain('<!DOCTYPE html>');
     expect(content).toContain('<div class="tests">');
     expect(content).not.toContain('class="test-card');
-    expect(content).toContain('<div class="count">0</div>');
+    // Check filter buttons show zero counts
+    expect(content).toContain('All (0)');
+    expect(content).toContain('Passed (0)');
   });
 
   it('should display all status types correctly', async () => {
@@ -541,7 +542,7 @@ describe('HTMLReporter', () => {
       expect(content).toContain('toLowerCase');
     });
 
-    it('should make summary boxes clickable to filter', async () => {
+    it('should have filter buttons with counts', async () => {
       const reporter = new HTMLReporter();
       const result: RunResult = {
         runId: 'a3f7b9c',
@@ -550,7 +551,7 @@ describe('HTMLReporter', () => {
         currentBranch: 'feature/test',
         config: {} as any,
         tests: [],
-        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+        summary: { total: 4, passed: 2, failed: 1, errored: 0, needsReview: 1 }
       };
 
       await reporter.generate(result, { outputDir: testOutputDir });
@@ -559,14 +560,14 @@ describe('HTMLReporter', () => {
       const htmlFile = path.join(testOutputDir, files[0]);
       const content = fs.readFileSync(htmlFile, 'utf-8');
 
-      // Summary boxes should have data-filter attribute
-      expect(content).toContain('class="summary-box passed" data-filter="passed"');
-      expect(content).toContain('class="summary-box needs-review" data-filter="needs-review"');
-      expect(content).toContain('class="summary-box failed" data-filter="failed"');
-      expect(content).toContain('class="summary-box errored" data-filter="errored"');
+      // Filter buttons should have data-filter attribute
+      expect(content).toContain('class="filter-button filter-passed" data-filter="passed"');
+      expect(content).toContain('class="filter-button filter-needs-review" data-filter="needs-review"');
+      expect(content).toContain('class="filter-button filter-failed" data-filter="failed"');
+      expect(content).toContain('class="filter-button filter-errored" data-filter="errored"');
 
-      // Should have event listeners for summary boxes
-      expect(content).toContain('.summary-box');
+      // Should have status banner
+      expect(content).toContain('status-banner');
     });
   });
 

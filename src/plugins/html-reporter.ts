@@ -351,33 +351,7 @@ export class HTMLReporter implements ReporterPlugin {
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>Visual UAT Report</h1>
-    <div class="metadata">
-      <div><strong>Branch:</strong> ${result.currentBranch}</div>
-      <div><strong>Base:</strong> ${result.baseBranch}</div>
-      <div><strong>Run ID:</strong> ${result.runId}</div>
-      <div><strong>Date:</strong> ${new Date(result.timestamp).toLocaleString()}</div>
-    </div>
-    <div class="summary">
-      <div class="summary-box passed" data-filter="passed">
-        <div class="count">${result.summary.passed}</div>
-        <div class="label">Passed</div>
-      </div>
-      <div class="summary-box needs-review" data-filter="needs-review">
-        <div class="count">${result.summary.needsReview}</div>
-        <div class="label">Needs Review</div>
-      </div>
-      <div class="summary-box failed" data-filter="failed">
-        <div class="count">${result.summary.failed}</div>
-        <div class="label">Failed</div>
-      </div>
-      <div class="summary-box errored" data-filter="errored">
-        <div class="count">${result.summary.errored}</div>
-        <div class="label">Errored</div>
-      </div>
-    </div>
-  </div>
+  ${this.generateStatusBanner(result)}
 
   ${filterBarHTML}
 
