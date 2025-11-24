@@ -607,4 +607,14 @@ export class HTMLReporter implements ReporterPlugin {
     }
   </script>`;
   }
+
+  private calculateOverallStatus(summary: { passed: number; needsReview: number; failed: number; errored: number }): 'passed' | 'needs-review' | 'failed' {
+    if (summary.failed > 0 || summary.errored > 0) {
+      return 'failed';
+    }
+    if (summary.needsReview > 0) {
+      return 'needs-review';
+    }
+    return 'passed';
+  }
 }

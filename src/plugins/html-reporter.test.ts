@@ -569,4 +569,44 @@ describe('HTMLReporter', () => {
       expect(content).toContain('.summary-box');
     });
   });
+
+  describe('HTMLReporter - calculateOverallStatus', () => {
+    let reporter: HTMLReporter;
+
+    beforeEach(() => {
+      reporter = new HTMLReporter();
+    });
+
+    it('should return "passed" when all tests passed', () => {
+      const result: Partial<RunResult> = {
+        summary: { total: 5, passed: 5, needsReview: 0, failed: 0, errored: 0 }
+      };
+      // @ts-ignore - accessing private method for testing
+      expect(reporter.calculateOverallStatus(result.summary)).toBe('passed');
+    });
+
+    it('should return "needs-review" when only passed and needs-review', () => {
+      const result: Partial<RunResult> = {
+        summary: { total: 5, passed: 3, needsReview: 2, failed: 0, errored: 0 }
+      };
+      // @ts-ignore
+      expect(reporter.calculateOverallStatus(result.summary)).toBe('needs-review');
+    });
+
+    it('should return "failed" when any tests failed', () => {
+      const result: Partial<RunResult> = {
+        summary: { total: 5, passed: 3, needsReview: 1, failed: 1, errored: 0 }
+      };
+      // @ts-ignore
+      expect(reporter.calculateOverallStatus(result.summary)).toBe('failed');
+    });
+
+    it('should return "failed" when any tests errored', () => {
+      const result: Partial<RunResult> = {
+        summary: { total: 5, passed: 4, needsReview: 0, failed: 0, errored: 1 }
+      };
+      // @ts-ignore
+      expect(reporter.calculateOverallStatus(result.summary)).toBe('failed');
+    });
+  });
 });
