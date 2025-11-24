@@ -537,7 +537,6 @@ export class HTMLReporter implements ReporterPlugin {
       let currentSearchText = '';
 
       const filterButtons = document.querySelectorAll('.filter-button');
-      const summaryBoxes = document.querySelectorAll('.summary-box');
       const searchInput = document.getElementById('search-input');
       const testCards = document.querySelectorAll('.test-card');
 
@@ -569,14 +568,9 @@ export class HTMLReporter implements ReporterPlugin {
 
       filterButtons.forEach(button => {
         button.addEventListener('click', function() {
-          currentStatusFilter = this.getAttribute('data-filter');
-          setActiveButton(currentStatusFilter);
-          applyFilters();
-        });
-      });
-
-      summaryBoxes.forEach(box => {
-        box.addEventListener('click', function() {
+          if (this.hasAttribute('disabled')) {
+            return; // Skip disabled buttons
+          }
           currentStatusFilter = this.getAttribute('data-filter');
           setActiveButton(currentStatusFilter);
           applyFilters();
