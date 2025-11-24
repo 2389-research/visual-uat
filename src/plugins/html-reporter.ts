@@ -658,7 +658,7 @@ export class HTMLReporter implements ReporterPlugin {
       </div>
       <div style="text-align: right; opacity: 0.9; font-size: 14px;">
         <div><strong>${totalTests} tests</strong></div>
-        <div title="${result.runId}">Run ID: ${result.runId.substring(0, 7)}</div>
+        <div title="${this.escapeHTML(result.runId)}">Run ID: ${result.runId.substring(0, 7)}</div>
         <div>${new Date(result.timestamp).toLocaleString()}</div>
       </div>
     </div>
