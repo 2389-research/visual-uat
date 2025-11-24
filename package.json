@@ -28,6 +28,7 @@
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.69.0",
+    "blockhash-core": "^0.1.0",
     "commander": "^11.1.0",
     "dotenv": "^17.2.3",
     "pixelmatch": "^5.3.0",
