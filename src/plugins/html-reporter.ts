@@ -55,46 +55,8 @@ export class HTMLReporter implements ReporterPlugin {
       margin-top: 10px;
       color: #666;
     }
-    .summary {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
-    }
-    .summary-box {
-      flex: 1;
-      padding: 20px;
-      border-radius: 6px;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .summary-box:hover {
-      transform: scale(1.05);
-    }
-    .summary-box.passed {
-      background: #10b981;
-      color: white;
-    }
-    .summary-box.needs-review {
-      background: #f59e0b;
-      color: white;
-    }
-    .summary-box.failed {
-      background: #ef4444;
-      color: white;
-    }
-    .summary-box.errored {
-      background: #6b7280;
-      color: white;
-    }
-    .summary-box .count {
-      font-size: 36px;
-      font-weight: bold;
-    }
-    .summary-box .label {
-      font-size: 14px;
-      text-transform: uppercase;
-      margin-top: 5px;
+    .status-banner {
+      /* Inline styles in HTML, no additional CSS needed */
     }
     .filter-bar {
       background: white;
@@ -112,22 +74,69 @@ export class HTMLReporter implements ReporterPlugin {
       flex-wrap: wrap;
     }
     .filter-button {
-      padding: 8px 16px;
-      border: 2px solid #e5e7eb;
-      border-radius: 6px;
-      background: white;
+      padding: 10px 20px;
+      border: 2px solid transparent;
+      border-radius: 20px;
+      background: #f3f4f6;
+      color: #6b7280;
       cursor: pointer;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       transition: all 0.2s;
+      white-space: nowrap;
     }
-    .filter-button:hover {
-      border-color: #9ca3af;
+    .filter-button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .filter-button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
     .filter-button.active {
-      border-color: #3b82f6;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    /* Color-specific styles */
+    .filter-all:not(.active) {
       background: #eff6ff;
       color: #1e40af;
+      border-color: #bfdbfe;
+    }
+    .filter-all.active {
+      background: #3b82f6;
+    }
+    .filter-passed:not(.active) {
+      background: #d1fae5;
+      color: #065f46;
+      border-color: #6ee7b7;
+    }
+    .filter-passed.active {
+      background: #10b981;
+    }
+    .filter-needs-review:not(.active) {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
+    }
+    .filter-needs-review.active {
+      background: #f59e0b;
+    }
+    .filter-failed:not(.active) {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fca5a5;
+    }
+    .filter-failed.active {
+      background: #ef4444;
+    }
+    .filter-errored:not(.active) {
+      background: #ffedd5;
+      color: #9a3412;
+      border-color: #fdba74;
+    }
+    .filter-errored.active {
+      background: #f97316;
     }
     .search-box {
       flex: 1;
