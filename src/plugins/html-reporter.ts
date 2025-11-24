@@ -63,39 +63,41 @@ export class HTMLReporter implements ReporterPlugin {
       padding: 15px 20px;
       border-radius: 8px;
       margin-bottom: 20px;
+    }
+    .filter-bar-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+    .filter-controls {
       display: flex;
-      gap: 15px;
-      align-items: center;
-      flex-wrap: wrap;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      overflow: hidden;
     }
     .filter-buttons {
       display: flex;
       gap: 0;
-      flex-wrap: wrap;
+      flex: 0 0 auto;
     }
     .filter-button {
       padding: 10px 20px;
-      border: 1px solid transparent;
-      border-radius: 0;
-      background: #f3f4f6;
+      border: none;
+      border-right: 1px solid #e5e7eb;
+      background: #f9fafb;
       color: #6b7280;
       cursor: pointer;
       font-size: 14px;
       font-weight: 600;
       transition: all 0.2s;
       white-space: nowrap;
+      position: relative;
     }
-    .filter-button:not(:first-child):not(:last-child) {
-      border-left: none;
+    .filter-button:last-of-type {
       border-right: none;
-    }
-    .filter-button:first-child {
-      border-top-left-radius: 4px;
-      border-bottom-left-radius: 4px;
-    }
-    .filter-button:last-child {
-      border-top-right-radius: 4px;
-      border-bottom-right-radius: 4px;
     }
     .filter-button:hover:not(:disabled) {
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -154,19 +156,52 @@ export class HTMLReporter implements ReporterPlugin {
       background: #f97316;
     }
     .search-box {
+      flex: 1;
       min-width: 200px;
-      max-width: 300px;
+      border-left: 1px solid #e5e7eb;
     }
     #search-input {
       width: 100%;
-      padding: 8px 12px;
-      border: 2px solid #e5e7eb;
-      border-radius: 6px;
+      padding: 10px 16px;
+      border: none;
+      background: white;
       font-size: 14px;
-    }
-    #search-input:focus {
       outline: none;
-      border-color: #3b82f6;
+    }
+    #search-input::placeholder {
+      color: #9ca3af;
+    }
+    /* Custom Tooltip Styles */
+    .tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: #1f2937;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-line;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 1000;
+      max-width: 300px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    }
+    .tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #1f2937;
+    }
+    .filter-button:hover .tooltip {
+      opacity: 1;
     }
     .tests {
       margin-top: 20px;
@@ -491,29 +526,37 @@ export class HTMLReporter implements ReporterPlugin {
 
     return `
   <div class="filter-bar">
-    <div class="filter-buttons">
-      <button class="filter-button filter-all active" data-filter="all" data-count="${total}" title="${allTooltip}">
-        <span>All (${total})</span>
-      </button>
-      <button class="filter-button filter-passed" data-filter="passed" data-count="${summary.passed}"
-              ${summary.passed === 0 ? 'disabled' : ''} title="${passedTooltip}">
-        <span>Passed (${summary.passed})</span>
-      </button>
-      <button class="filter-button filter-needs-review" data-filter="needs-review" data-count="${summary.needsReview}"
-              ${summary.needsReview === 0 ? 'disabled' : ''} title="${reviewTooltip}">
-        <span>Needs Review (${summary.needsReview})</span>
-      </button>
-      <button class="filter-button filter-failed" data-filter="failed" data-count="${summary.failed}"
-              ${summary.failed === 0 ? 'disabled' : ''} title="${failedTooltip}">
-        <span>Failed (${summary.failed})</span>
-      </button>
-      <button class="filter-button filter-errored" data-filter="errored" data-count="${summary.errored}"
-              ${summary.errored === 0 ? 'disabled' : ''} title="${erroredTooltip}">
-        <span>Errored (${summary.errored})</span>
-      </button>
-    </div>
-    <div class="search-box">
-      <input type="text" id="search-input" placeholder="Search tests by name...">
+    <div class="filter-bar-label">Filter Tests</div>
+    <div class="filter-controls">
+      <div class="filter-buttons">
+        <button class="filter-button filter-all active" data-filter="all" data-count="${total}">
+          <span>All (${total})</span>
+          <div class="tooltip">${allTooltip}</div>
+        </button>
+        <button class="filter-button filter-passed" data-filter="passed" data-count="${summary.passed}"
+                ${summary.passed === 0 ? 'disabled' : ''}>
+          <span>Passed (${summary.passed})</span>
+          ${summary.passed > 0 ? `<div class="tooltip">${passedTooltip}</div>` : ''}
+        </button>
+        <button class="filter-button filter-needs-review" data-filter="needs-review" data-count="${summary.needsReview}"
+                ${summary.needsReview === 0 ? 'disabled' : ''}>
+          <span>Needs Review (${summary.needsReview})</span>
+          ${summary.needsReview > 0 ? `<div class="tooltip">${reviewTooltip}</div>` : ''}
+        </button>
+        <button class="filter-button filter-failed" data-filter="failed" data-count="${summary.failed}"
+                ${summary.failed === 0 ? 'disabled' : ''}>
+          <span>Failed (${summary.failed})</span>
+          ${summary.failed > 0 ? `<div class="tooltip">${failedTooltip}</div>` : ''}
+        </button>
+        <button class="filter-button filter-errored" data-filter="errored" data-count="${summary.errored}"
+                ${summary.errored === 0 ? 'disabled' : ''}>
+          <span>Errored (${summary.errored})</span>
+          ${summary.errored > 0 ? `<div class="tooltip">${erroredTooltip}</div>` : ''}
+        </button>
+      </div>
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search tests by name...">
+      </div>
     </div>
   </div>`;
   }

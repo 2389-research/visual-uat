@@ -777,7 +777,7 @@ describe('HTMLReporter', () => {
       };
       // @ts-ignore
       const html = reporter.generateFilterButtonGroup(result);
-      expect(html).toContain('title="');
+      expect(html).toContain('class="tooltip"');
     });
   });
 });
