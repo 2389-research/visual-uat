@@ -70,13 +70,13 @@ export class HTMLReporter implements ReporterPlugin {
     }
     .filter-buttons {
       display: flex;
-      gap: 10px;
+      gap: 0;
       flex-wrap: wrap;
     }
     .filter-button {
       padding: 10px 20px;
       border: 2px solid transparent;
-      border-radius: 20px;
+      border-radius: 0;
       background: #f3f4f6;
       color: #6b7280;
       cursor: pointer;
@@ -84,6 +84,14 @@ export class HTMLReporter implements ReporterPlugin {
       font-weight: 600;
       transition: all 0.2s;
       white-space: nowrap;
+    }
+    .filter-button:first-child {
+      border-top-left-radius: 20px;
+      border-bottom-left-radius: 20px;
+    }
+    .filter-button:last-child {
+      border-top-right-radius: 20px;
+      border-bottom-right-radius: 20px;
     }
     .filter-button:hover:not(:disabled) {
       transform: translateY(-1px);
@@ -623,17 +631,23 @@ export class HTMLReporter implements ReporterPlugin {
 
     const statusConfig = {
       'passed': {
-        color: '#10b981',
+        borderColor: '#10b981',
+        backgroundColor: '#d1fae5',
+        textColor: '#065f46',
         icon: '✓',
         text: 'All Tests Passed'
       },
       'needs-review': {
-        color: '#f59e0b',
+        borderColor: '#f59e0b',
+        backgroundColor: '#fef3c7',
+        textColor: '#92400e',
         icon: '⚠',
         text: `${result.summary.needsReview} Test${result.summary.needsReview === 1 ? '' : 's'} Need Review`
       },
       'failed': {
-        color: '#ef4444',
+        borderColor: '#ef4444',
+        backgroundColor: '#fee2e2',
+        textColor: '#991b1b',
         icon: '✗',
         text: 'Tests Failed'
       }
@@ -643,20 +657,20 @@ export class HTMLReporter implements ReporterPlugin {
     const totalTests = result.summary.passed + result.summary.needsReview + result.summary.failed + result.summary.errored;
 
     return `
-  <div class="status-banner" style="background: ${config.color}; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+  <div class="status-banner" style="background: ${config.backgroundColor}; color: ${config.textColor}; border: 3px solid ${config.borderColor}; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
       <div style="flex: 1; min-width: 300px;">
         <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">
           <span style="margin-right: 10px;">${config.icon}</span>
           ${config.text}
         </div>
-        <div style="font-size: 14px; opacity: 0.9;">
-          Comparing: <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.currentBranch)}</code>
+        <div style="font-size: 14px; opacity: 0.8;">
+          Comparing: <code style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.currentBranch)}</code>
           →
-          <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.baseBranch)}</code>
+          <code style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.baseBranch)}</code>
         </div>
       </div>
-      <div style="text-align: right; opacity: 0.9; font-size: 14px;">
+      <div style="text-align: right; opacity: 0.8; font-size: 14px;">
         <div><strong>${totalTests} tests</strong></div>
         <div title="${this.escapeHTML(result.runId)}">Run ID: ${result.runId.substring(0, 7)}</div>
         <div>${new Date(result.timestamp).toLocaleString()}</div>
