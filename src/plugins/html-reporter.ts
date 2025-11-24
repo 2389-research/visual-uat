@@ -617,4 +617,51 @@ export class HTMLReporter implements ReporterPlugin {
     }
     return 'passed';
   }
+
+  private generateStatusBanner(result: RunResult): string {
+    const overallStatus = this.calculateOverallStatus(result.summary);
+
+    const statusConfig = {
+      'passed': {
+        color: '#10b981',
+        icon: '✓',
+        text: 'All Tests Passed'
+      },
+      'needs-review': {
+        color: '#f59e0b',
+        icon: '⚠',
+        text: `${result.summary.needsReview} Test${result.summary.needsReview === 1 ? '' : 's'} Need Review`
+      },
+      'failed': {
+        color: '#ef4444',
+        icon: '✗',
+        text: 'Tests Failed'
+      }
+    };
+
+    const config = statusConfig[overallStatus];
+    const totalTests = result.summary.passed + result.summary.needsReview + result.summary.failed + result.summary.errored;
+
+    return `
+  <div class="status-banner" style="background: ${config.color}; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+      <div style="flex: 1; min-width: 300px;">
+        <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">
+          <span style="margin-right: 10px;">${config.icon}</span>
+          ${config.text}
+        </div>
+        <div style="font-size: 14px; opacity: 0.9;">
+          Comparing: <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.currentBranch)}</code>
+          →
+          <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.baseBranch)}</code>
+        </div>
+      </div>
+      <div style="text-align: right; opacity: 0.9; font-size: 14px;">
+        <div><strong>${totalTests} tests</strong></div>
+        <div title="${result.runId}">Run ID: ${result.runId.substring(0, 7)}</div>
+        <div>${new Date(result.timestamp).toLocaleString()}</div>
+      </div>
+    </div>
+  </div>`;
+  }
 }

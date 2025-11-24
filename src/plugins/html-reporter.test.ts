@@ -609,4 +609,63 @@ describe('HTMLReporter', () => {
       expect(reporter.calculateOverallStatus(result.summary)).toBe('failed');
     });
   });
+
+  describe('HTMLReporter - generateStatusBanner', () => {
+    let reporter: HTMLReporter;
+
+    beforeEach(() => {
+      reporter = new HTMLReporter();
+    });
+
+    it('should generate green banner for passed status', () => {
+      const result: RunResult = {
+        currentBranch: 'feature/test',
+        baseBranch: 'main',
+        runId: 'abc123',
+        timestamp: 1700000000000,
+        summary: { total: 5, passed: 5, needsReview: 0, failed: 0, errored: 0 },
+        tests: [],
+        config: {} as any
+      };
+      // @ts-ignore
+      const html = reporter.generateStatusBanner(result);
+      expect(html).toContain('background: #10b981');
+      expect(html).toContain('All Tests Passed');
+      expect(html).toContain('feature/test');
+      expect(html).toContain('main');
+      expect(html).toContain('5 tests');
+    });
+
+    it('should generate amber banner for needs-review status', () => {
+      const result: RunResult = {
+        currentBranch: 'feature/test',
+        baseBranch: 'main',
+        runId: 'abc123',
+        timestamp: 1700000000000,
+        summary: { total: 5, passed: 3, needsReview: 2, failed: 0, errored: 0 },
+        tests: [],
+        config: {} as any
+      };
+      // @ts-ignore
+      const html = reporter.generateStatusBanner(result);
+      expect(html).toContain('background: #f59e0b');
+      expect(html).toContain('2 Tests Need Review');
+    });
+
+    it('should generate red banner for failed status', () => {
+      const result: RunResult = {
+        currentBranch: 'feature/test',
+        baseBranch: 'main',
+        runId: 'abc123',
+        timestamp: 1700000000000,
+        summary: { total: 5, passed: 2, needsReview: 1, failed: 1, errored: 1 },
+        tests: [],
+        config: {} as any
+      };
+      // @ts-ignore
+      const html = reporter.generateStatusBanner(result);
+      expect(html).toContain('background: #ef4444');
+      expect(html).toContain('Tests Failed');
+    });
+  });
 });
