@@ -630,9 +630,8 @@ describe('HTMLReporter', () => {
       };
       // @ts-ignore
       const html = reporter.generateStatusBanner(result);
-      expect(html).toContain('background: #d1fae5');
-      expect(html).toContain('border: 3px solid #10b981');
-      expect(html).toContain('color: #065f46');
+      expect(html).toContain('background: #10b981');
+      expect(html).toContain('color: white');
       expect(html).toContain('All Tests Passed');
       expect(html).toContain('feature/test');
       expect(html).toContain('main');
@@ -651,9 +650,8 @@ describe('HTMLReporter', () => {
       };
       // @ts-ignore
       const html = reporter.generateStatusBanner(result);
-      expect(html).toContain('background: #fef3c7');
-      expect(html).toContain('border: 3px solid #f59e0b');
-      expect(html).toContain('color: #92400e');
+      expect(html).toContain('background: #f59e0b');
+      expect(html).toContain('color: white');
       expect(html).toContain('2 Tests Need Review');
     });
 
@@ -669,9 +667,8 @@ describe('HTMLReporter', () => {
       };
       // @ts-ignore
       const html = reporter.generateStatusBanner(result);
-      expect(html).toContain('background: #fee2e2');
-      expect(html).toContain('border: 3px solid #ef4444');
-      expect(html).toContain('color: #991b1b');
+      expect(html).toContain('background: #ef4444');
+      expect(html).toContain('color: white');
       expect(html).toContain('Tests Failed');
     });
   });

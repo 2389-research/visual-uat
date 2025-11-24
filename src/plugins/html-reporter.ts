@@ -98,8 +98,11 @@ export class HTMLReporter implements ReporterPlugin {
       border-bottom-right-radius: 4px;
     }
     .filter-button:hover:not(:disabled) {
-      transform: translateY(-1px);
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .filter-button:hover:not(:disabled) span {
+      transform: translateY(-1px);
+      display: inline-block;
     }
     .filter-button:disabled {
       opacity: 0.4;
@@ -151,8 +154,8 @@ export class HTMLReporter implements ReporterPlugin {
       background: #f97316;
     }
     .search-box {
-      flex: 1;
       min-width: 200px;
+      max-width: 300px;
     }
     #search-input {
       width: 100%;
@@ -490,23 +493,23 @@ export class HTMLReporter implements ReporterPlugin {
   <div class="filter-bar">
     <div class="filter-buttons">
       <button class="filter-button filter-all active" data-filter="all" data-count="${total}" title="${allTooltip}">
-        All (${total})
+        <span>All (${total})</span>
       </button>
       <button class="filter-button filter-passed" data-filter="passed" data-count="${summary.passed}"
               ${summary.passed === 0 ? 'disabled' : ''} title="${passedTooltip}">
-        Passed (${summary.passed})
+        <span>Passed (${summary.passed})</span>
       </button>
       <button class="filter-button filter-needs-review" data-filter="needs-review" data-count="${summary.needsReview}"
               ${summary.needsReview === 0 ? 'disabled' : ''} title="${reviewTooltip}">
-        Needs Review (${summary.needsReview})
+        <span>Needs Review (${summary.needsReview})</span>
       </button>
       <button class="filter-button filter-failed" data-filter="failed" data-count="${summary.failed}"
               ${summary.failed === 0 ? 'disabled' : ''} title="${failedTooltip}">
-        Failed (${summary.failed})
+        <span>Failed (${summary.failed})</span>
       </button>
       <button class="filter-button filter-errored" data-filter="errored" data-count="${summary.errored}"
               ${summary.errored === 0 ? 'disabled' : ''} title="${erroredTooltip}">
-        Errored (${summary.errored})
+        <span>Errored (${summary.errored})</span>
       </button>
     </div>
     <div class="search-box">
@@ -635,23 +638,17 @@ export class HTMLReporter implements ReporterPlugin {
 
     const statusConfig = {
       'passed': {
-        borderColor: '#10b981',
-        backgroundColor: '#d1fae5',
-        textColor: '#065f46',
+        color: '#10b981',
         icon: '✓',
         text: 'All Tests Passed'
       },
       'needs-review': {
-        borderColor: '#f59e0b',
-        backgroundColor: '#fef3c7',
-        textColor: '#92400e',
+        color: '#f59e0b',
         icon: '⚠',
         text: `${result.summary.needsReview} Test${result.summary.needsReview === 1 ? '' : 's'} Need Review`
       },
       'failed': {
-        borderColor: '#ef4444',
-        backgroundColor: '#fee2e2',
-        textColor: '#991b1b',
+        color: '#ef4444',
         icon: '✗',
         text: 'Tests Failed'
       }
@@ -661,22 +658,22 @@ export class HTMLReporter implements ReporterPlugin {
     const totalTests = result.summary.passed + result.summary.needsReview + result.summary.failed + result.summary.errored;
 
     return `
-  <div class="status-banner" style="background: ${config.backgroundColor}; color: ${config.textColor}; border: 3px solid ${config.borderColor}; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+  <div class="status-banner" style="background: ${config.color}; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
       <div style="flex: 1; min-width: 300px;">
         <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">
           <span style="margin-right: 10px;">${config.icon}</span>
           ${config.text}
         </div>
-        <div style="font-size: 14px; opacity: 0.8;">
-          Comparing: <code style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.currentBranch)}</code>
+        <div style="font-size: 14px; opacity: 0.9;">
+          Comparing: <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.currentBranch)}</code>
           →
-          <code style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.baseBranch)}</code>
+          <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.baseBranch)}</code>
         </div>
       </div>
-      <div style="text-align: right; opacity: 0.8; font-size: 14px;">
+      <div style="text-align: right; opacity: 0.9; font-size: 14px;">
         <div><strong>${totalTests} tests</strong></div>
-        <div title="${this.escapeHTML(result.runId)}">Run ID: ${result.runId.substring(0, 7)}</div>
+        <div title="${this.escapeHTML(result.runId)}">Run ID: ${result.runId.slice(-6)}</div>
         <div>${new Date(result.timestamp).toLocaleString()}</div>
       </div>
     </div>
