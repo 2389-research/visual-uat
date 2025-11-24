@@ -1,5 +1,12 @@
 .worktrees/
-.visual-uat/
 node_modules/
 dist/
 .env.local
+test-results/
+
+# Visual UAT - all generated artifacts (baselines regenerated from base branch)
+.visual-uat/
+
+# Demo app generated artifacts
+examples/demo-app/.visual-uat/
+examples/demo-app/test-results/
