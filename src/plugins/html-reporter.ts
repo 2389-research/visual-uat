@@ -27,7 +27,7 @@ export class HTMLReporter implements ReporterPlugin {
 
   private generateHTML(result: RunResult, options: ReporterOptions): string {
     const testCardsHTML = result.tests.map(test => this.generateTestCard(test)).join('\n');
-    const filterBarHTML = this.generateFilterBar();
+    const filterBarHTML = this.generateFilterButtonGroup(result);
     const scriptHTML = this.generateFilterScript();
 
     return `<!DOCTYPE html>
@@ -481,15 +481,38 @@ export class HTMLReporter implements ReporterPlugin {
     return str.replace(/[&<>"']/g, char => htmlEscapeMap[char]);
   }
 
-  private generateFilterBar(): string {
+  private generateFilterButtonGroup(result: RunResult): string {
+    const summary = result.summary;
+    const total = summary.passed + summary.needsReview + summary.failed + summary.errored;
+
+    const allTooltip = this.escapeHTML(this.generateAllTooltip(summary));
+    const passedTooltip = summary.passed > 0 ? this.escapeHTML(this.generateStatusTooltip(result.tests, 'passed')) : '';
+    const reviewTooltip = summary.needsReview > 0 ? this.escapeHTML(this.generateStatusTooltip(result.tests, 'needs-review')) : '';
+    const failedTooltip = summary.failed > 0 ? this.escapeHTML(this.generateStatusTooltip(result.tests, 'failed')) : '';
+    const erroredTooltip = summary.errored > 0 ? this.escapeHTML(this.generateStatusTooltip(result.tests, 'errored')) : '';
+
     return `
   <div class="filter-bar">
     <div class="filter-buttons">
-      <button class="filter-button active" data-filter="all">All</button>
-      <button class="filter-button" data-filter="passed">Passed</button>
-      <button class="filter-button" data-filter="needs-review">Needs Review</button>
-      <button class="filter-button" data-filter="failed">Failed</button>
-      <button class="filter-button" data-filter="errored">Errored</button>
+      <button class="filter-button filter-all active" data-filter="all" data-count="${total}" title="${allTooltip}">
+        All (${total})
+      </button>
+      <button class="filter-button filter-passed" data-filter="passed" data-count="${summary.passed}"
+              ${summary.passed === 0 ? 'disabled' : ''} title="${passedTooltip}">
+        Passed (${summary.passed})
+      </button>
+      <button class="filter-button filter-needs-review" data-filter="needs-review" data-count="${summary.needsReview}"
+              ${summary.needsReview === 0 ? 'disabled' : ''} title="${reviewTooltip}">
+        Needs Review (${summary.needsReview})
+      </button>
+      <button class="filter-button filter-failed" data-filter="failed" data-count="${summary.failed}"
+              ${summary.failed === 0 ? 'disabled' : ''} title="${failedTooltip}">
+        Failed (${summary.failed})
+      </button>
+      <button class="filter-button filter-errored" data-filter="errored" data-count="${summary.errored}"
+              ${summary.errored === 0 ? 'disabled' : ''} title="${erroredTooltip}">
+        Errored (${summary.errored})
+      </button>
     </div>
     <div class="search-box">
       <input type="text" id="search-input" placeholder="Search tests by name...">

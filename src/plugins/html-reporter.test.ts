@@ -483,12 +483,12 @@ describe('HTMLReporter', () => {
       expect(content).toContain('data-filter="failed"');
       expect(content).toContain('data-filter="errored"');
 
-      // Button text
-      expect(content).toContain('>All</');
-      expect(content).toContain('>Passed</');
-      expect(content).toContain('>Needs Review</');
-      expect(content).toContain('>Failed</');
-      expect(content).toContain('>Errored</');
+      // Button text with counts
+      expect(content).toContain('All (0)');
+      expect(content).toContain('Passed (0)');
+      expect(content).toContain('Needs Review (0)');
+      expect(content).toContain('Failed (0)');
+      expect(content).toContain('Errored (0)');
 
       // Search input
       expect(content).toContain('id="search-input"');
@@ -714,6 +714,66 @@ describe('HTMLReporter', () => {
       expect(tooltip).toContain('test4');
       expect(tooltip).toContain('...and 2 more');
       expect(tooltip).not.toContain('test5');
+    });
+  });
+
+  describe('HTMLReporter - generateFilterButtonGroup', () => {
+    let reporter: HTMLReporter;
+
+    beforeEach(() => {
+      reporter = new HTMLReporter();
+    });
+
+    it('should generate buttons with counts', () => {
+      const result: RunResult = {
+        summary: { total: 4, passed: 2, needsReview: 1, failed: 1, errored: 0 },
+        tests: [],
+        currentBranch: 'feature/test',
+        baseBranch: 'main',
+        runId: 'abc123',
+        timestamp: Date.now(),
+        config: {} as any
+      };
+      // @ts-ignore
+      const html = reporter.generateFilterButtonGroup(result);
+      expect(html).toContain('All (4)');
+      expect(html).toContain('Passed (2)');
+      expect(html).toContain('Needs Review (1)');
+      expect(html).toContain('Failed (1)');
+      expect(html).toContain('Errored (0)');
+    });
+
+    it('should add disabled attribute to zero-count buttons', () => {
+      const result: RunResult = {
+        summary: { total: 5, passed: 5, needsReview: 0, failed: 0, errored: 0 },
+        tests: [],
+        currentBranch: 'feature/test',
+        baseBranch: 'main',
+        runId: 'abc123',
+        timestamp: Date.now(),
+        config: {} as any
+      };
+      // @ts-ignore
+      const html = reporter.generateFilterButtonGroup(result);
+      expect(html).toContain('data-count="0"');
+      expect(html).toContain('disabled');
+    });
+
+    it('should include tooltips on buttons', () => {
+      const result: RunResult = {
+        summary: { total: 2, passed: 2, needsReview: 1, failed: 1, errored: 0 },
+        tests: [
+          { specPath: 'tests/login.md', status: 'failed', checkpoints: [], duration: 1000, generatedPath: '', baselineAvailable: true }
+        ],
+        currentBranch: 'feature/test',
+        baseBranch: 'main',
+        runId: 'abc123',
+        timestamp: Date.now(),
+        config: {} as any
+      };
+      // @ts-ignore
+      const html = reporter.generateFilterButtonGroup(result);
+      expect(html).toContain('title="');
     });
   });
 });
