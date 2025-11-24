@@ -664,4 +664,25 @@ export class HTMLReporter implements ReporterPlugin {
     </div>
   </div>`;
   }
+
+  private generateAllTooltip(summary: { passed: number; needsReview: number; failed: number; errored: number }): string {
+    const total = summary.passed + summary.needsReview + summary.failed + summary.errored;
+    const percent = (count: number) => total > 0 ? Math.round((count / total) * 100) : 0;
+
+    return `Passed: ${summary.passed} (${percent(summary.passed)}%)
+Needs Review: ${summary.needsReview} (${percent(summary.needsReview)}%)
+Failed: ${summary.failed} (${percent(summary.failed)}%)
+Errored: ${summary.errored} (${percent(summary.errored)}%)`;
+  }
+
+  private generateStatusTooltip(tests: TestResult[], status: string): string {
+    const filteredTests = tests.filter(t => t.status === status);
+    const names = filteredTests.map(t => path.basename(t.specPath, '.md'));
+
+    if (names.length <= 4) {
+      return names.join('\n');
+    }
+
+    return names.slice(0, 4).join('\n') + `\n...and ${names.length - 4} more`;
+  }
 }

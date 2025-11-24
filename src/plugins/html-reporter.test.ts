@@ -668,4 +668,52 @@ describe('HTMLReporter', () => {
       expect(html).toContain('Tests Failed');
     });
   });
+
+  describe('HTMLReporter - generateTooltipContent', () => {
+    let reporter: HTMLReporter;
+
+    beforeEach(() => {
+      reporter = new HTMLReporter();
+    });
+
+    it('should generate percentage breakdown for "all" filter', () => {
+      const summary = { passed: 2, needsReview: 1, failed: 1, errored: 1, total: 5 };
+      // @ts-ignore
+      const tooltip = reporter.generateAllTooltip(summary);
+      expect(tooltip).toContain('Passed: 2 (40%)');
+      expect(tooltip).toContain('Needs Review: 1 (20%)');
+      expect(tooltip).toContain('Failed: 1 (20%)');
+      expect(tooltip).toContain('Errored: 1 (20%)');
+    });
+
+    it('should generate test names list for status filter', () => {
+      const tests = [
+        { specPath: 'tests/specs/login.md', status: 'failed' },
+        { specPath: 'tests/specs/checkout.md', status: 'failed' },
+        { specPath: 'tests/specs/profile.md', status: 'failed' }
+      ];
+      // @ts-ignore
+      const tooltip = reporter.generateStatusTooltip(tests as any, 'failed');
+      expect(tooltip).toContain('login');
+      expect(tooltip).toContain('checkout');
+      expect(tooltip).toContain('profile');
+    });
+
+    it('should limit test names to 4 and show ellipsis', () => {
+      const tests = [
+        { specPath: 'tests/specs/test1.md', status: 'passed' },
+        { specPath: 'tests/specs/test2.md', status: 'passed' },
+        { specPath: 'tests/specs/test3.md', status: 'passed' },
+        { specPath: 'tests/specs/test4.md', status: 'passed' },
+        { specPath: 'tests/specs/test5.md', status: 'passed' },
+        { specPath: 'tests/specs/test6.md', status: 'passed' }
+      ];
+      // @ts-ignore
+      const tooltip = reporter.generateStatusTooltip(tests as any, 'passed');
+      expect(tooltip).toContain('test1');
+      expect(tooltip).toContain('test4');
+      expect(tooltip).toContain('...and 2 more');
+      expect(tooltip).not.toContain('test5');
+    });
+  });
 });
