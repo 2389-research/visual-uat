@@ -24,10 +24,10 @@ describe('TestRunner', () => {
       error: undefined
     } as any);
 
-    const result = runner.runTest('tests/generated/login.spec.ts');
+    const result = runner.runTest('/project/root/tests/generated/login.spec.ts');
 
     expect(result.status).toBe('passed');
-    expect(result.testPath).toBe('tests/generated/login.spec.ts');
+    expect(result.testPath).toBe('/project/root/tests/generated/login.spec.ts');
     expect(mockSpawnSync).toHaveBeenCalledWith(
       'npx',
       ['playwright', 'test', 'tests/generated/login.spec.ts', '--reporter=json'],
@@ -49,7 +49,7 @@ describe('TestRunner', () => {
       error: undefined
     } as any);
 
-    const result = runner.runTest('tests/generated/broken.spec.ts');
+    const result = runner.runTest('/project/root/tests/generated/broken.spec.ts');
 
     expect(result.status).toBe('errored');
     expect(result.error).toBe('Exit code 1: Test failed');
@@ -63,7 +63,7 @@ describe('TestRunner', () => {
       error: new Error('Command not found')
     } as any);
 
-    const result = runner.runTest('tests/generated/test.spec.ts');
+    const result = runner.runTest('/project/root/tests/generated/test.spec.ts');
 
     expect(result.status).toBe('errored');
     expect(result.error).toContain('Command not found');
