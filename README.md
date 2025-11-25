@@ -43,6 +43,40 @@ targetRunner: {
 
 For more examples, see [docs/examples/target-runners.md](docs/examples/target-runners.md)
 
+## Smart Image Diffing
+
+Visual-UAT uses intelligent image comparison that handles:
+
+- ✅ Different-sized images (no more dimension errors!)
+- ✅ Content insertions without false positives on shifted content
+- ✅ Content deletions with accurate change detection
+- ✅ Layout reordering with content-aware matching
+- ✅ Backward compatible with same-size image comparisons
+
+### How It Works
+
+Smart diffing uses a two-tier hybrid approach:
+
+1. **Tier 1: Adaptive Alignment (Fast Path)** - Row-by-row comparison with sliding window search for common cases
+2. **Tier 2: Feature-Based Matching (Fallback)** - Perceptual hashing and block matching for complex restructuring
+
+### Configuration
+
+```javascript
+// visual-uat.config.js
+module.exports = {
+  differ: '@visual-uat/smart-differ', // Default
+  smartDiffer: {
+    adaptiveThreshold: 0.95,    // Similarity required for row match
+    searchWindow: 50,           // ±N rows to search for alignment
+    blockSize: 50,              // Rows per feature block
+    fallbackThreshold: 3        // Misalignments before fallback
+  }
+};
+```
+
+For more details, see [docs/smart-differ-guide.md](docs/smart-differ-guide.md)
+
 ## Dogfooding: Testing the HTML Reporter
 
 Visual-uat tests its own HTML report structure to catch visual regressions.
