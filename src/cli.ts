@@ -78,15 +78,13 @@ export function createCLI(): Command {
     .option('--open, -o', 'Auto-open HTML report in browser after generation')
     .option(
       '--base-port <port>',
-      'Port for baseline server (default: 34567)',
-      (value) => parseInt(value, 10),
-      34567
+      'Port for baseline server (auto-detected if not specified)',
+      (value) => parseInt(value, 10)
     )
     .option(
       '--current-port <port>',
-      'Port for current server (default: 34568)',
-      (value) => parseInt(value, 10),
-      34568
+      'Port for current server (auto-detected if not specified)',
+      (value) => parseInt(value, 10)
     )
     .action(async (options) => {
       try {

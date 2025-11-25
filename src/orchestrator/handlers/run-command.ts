@@ -11,7 +11,8 @@ import { WorktreeManager } from '../services/worktree-manager';
 import { TestRunner } from '../services/test-runner';
 import { ResultStore } from '../services/result-store';
 import { generateRunId } from '../services/run-id-generator';
-import { ServerManager, ServerInfo } from '../services/server-manager';
+import { ServerManager } from '../services/server-manager';
+import { findAvailablePorts } from '../services/port-finder';
 import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -505,8 +506,25 @@ export class RunCommandHandler {
     // Store runOptions for access by helper methods
     this.runOptions = options;
 
-    const basePort = options.basePort || 34567;
-    const currentPort = options.currentPort || 34568;
+    // Use specified ports or find available ones dynamically
+    let basePort: number;
+    let currentPort: number;
+
+    if (options.basePort && options.currentPort) {
+      basePort = options.basePort;
+      currentPort = options.currentPort;
+    } else if (options.basePort || options.currentPort) {
+      // If only one port specified, find one more
+      const [dynamicPort] = await findAvailablePorts(1);
+      basePort = options.basePort || dynamicPort;
+      currentPort = options.currentPort || dynamicPort;
+    } else {
+      // Find two available ports dynamically
+      const ports = await findAvailablePorts(2);
+      basePort = ports[0];
+      currentPort = ports[1];
+      console.log(`Using dynamic ports: base=${basePort}, current=${currentPort}`);
+    }
 
     let state: ExecutionState = 'SETUP';
     const context: ExecutionContext = {
