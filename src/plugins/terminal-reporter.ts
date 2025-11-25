@@ -4,6 +4,7 @@
 import { ReporterPlugin, ReporterOptions } from '../types/plugins';
 import { RunResult } from '../orchestrator/types/results';
 import * as path from 'path';
+import { pathToFileURL } from 'url';
 
 export class TerminalReporter implements ReporterPlugin {
   async generate(result: RunResult, options: ReporterOptions): Promise<void> {
@@ -136,6 +137,8 @@ export class TerminalReporter implements ReporterPlugin {
   private getReportPath(timestamp: number, runId: string, outputDir: string): string {
     const date = new Date(timestamp);
     const formatted = date.toISOString().slice(0, 19).replace(/[:T]/g, '-');
-    return path.join(outputDir, `${formatted}-${runId}.html`);
+    const relativePath = path.join(outputDir, `${formatted}-${runId}.html`);
+    const absolutePath = path.resolve(relativePath);
+    return pathToFileURL(absolutePath).href;
   }
 }

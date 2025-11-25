@@ -7,6 +7,7 @@ import { RunResult, TestResult, CheckpointResult } from '../orchestrator/types/r
 import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
+import { pathToFileURL } from 'url';
 
 export class HTMLReporter implements ReporterPlugin {
   async generate(result: RunResult, options: ReporterOptions): Promise<void> {
@@ -39,15 +40,16 @@ export class HTMLReporter implements ReporterPlugin {
 
   private openInBrowser(filepath: string): void {
     const absolutePath = path.resolve(filepath);
+    const fileUrl = pathToFileURL(absolutePath).href;
     const platform = process.platform;
 
     let command: string;
     if (platform === 'darwin') {
-      command = `open "${absolutePath}"`;
+      command = `open "${fileUrl}"`;
     } else if (platform === 'win32') {
-      command = `start "" "${absolutePath}"`;
+      command = `start "" "${fileUrl}"`;
     } else {
-      command = `xdg-open "${absolutePath}"`;
+      command = `xdg-open "${fileUrl}"`;
     }
 
     exec(command, (error) => {

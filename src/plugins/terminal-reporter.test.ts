@@ -91,6 +91,26 @@ describe('TerminalReporter', () => {
       expect(output.some(line => line.includes('Report:'))).toBe(true);
       expect(output.some(line => line.includes('.visual-uat/reports'))).toBe(true);
     });
+
+    it('should output clickable file:// URL for report path', async () => {
+      const reporter = new TerminalReporter();
+      const result: RunResult = {
+        runId: 'abc123',
+        timestamp: 1700000000000,
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      };
+
+      await reporter.generate(result, { verbosity: 'quiet', outputDir: '.visual-uat/reports' });
+
+      const reportLine = output.find(line => line.includes('Report:'));
+      expect(reportLine).toBeDefined();
+      expect(reportLine).toContain('file://');
+      expect(reportLine).toContain('.html');
+    });
   });
 
   describe('normal mode', () => {
