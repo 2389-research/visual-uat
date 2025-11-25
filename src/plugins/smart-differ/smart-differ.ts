@@ -79,7 +79,9 @@ export class SmartDiffer implements Differ {
     baseline: PNG,
     current: PNG
   ): number {
-    const totalPixels = Math.max(baseline.width * baseline.height, current.width * current.height);
+    // Use union of both images as denominator to prevent >100% when counting
+    // both insertions (in current) and deletions (from baseline)
+    const totalPixels = baseline.width * baseline.height + current.width * current.height;
     let changedPixels = 0;
 
     for (const region of regions) {

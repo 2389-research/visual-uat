@@ -192,4 +192,88 @@ describe('SmartDiffer', () => {
 
     expect(result.diffImage).toBeDefined();
   });
+
+  it('should never return pixelDiffPercent greater than 100%', async () => {
+    // Create very different images with different sizes to trigger maximum diff
+    const img1 = createTestImage(100, 100, [255, 0, 0]);
+    const img2 = createTestImage(100, 200, [0, 255, 0]);
+
+    const screenshot1: Screenshot = {
+      data: img1,
+      width: 100,
+      height: 100,
+      checkpoint: 'test'
+    };
+
+    const screenshot2: Screenshot = {
+      data: img2,
+      width: 100,
+      height: 200,
+      checkpoint: 'test'
+    };
+
+    const result = await differ.compare(screenshot1, screenshot2);
+
+    expect(result.pixelDiffPercent).toBeLessThanOrEqual(100);
+    expect(result.pixelDiffPercent).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should return reasonable pixelDiffPercent for partially similar different-sized images', async () => {
+    // Baseline: 100x100 red
+    // Current: 100x150 with 100x100 red + 100x50 green (inserted)
+    const baseline = new PNG({ width: 100, height: 100 });
+    for (let y = 0; y < 100; y++) {
+      for (let x = 0; x < 100; x++) {
+        const idx = (100 * y + x) << 2;
+        baseline.data[idx] = 255;
+        baseline.data[idx + 1] = 0;
+        baseline.data[idx + 2] = 0;
+        baseline.data[idx + 3] = 255;
+      }
+    }
+
+    const current = new PNG({ width: 100, height: 150 });
+    // First 100 rows: red (same as baseline)
+    for (let y = 0; y < 100; y++) {
+      for (let x = 0; x < 100; x++) {
+        const idx = (100 * y + x) << 2;
+        current.data[idx] = 255;
+        current.data[idx + 1] = 0;
+        current.data[idx + 2] = 0;
+        current.data[idx + 3] = 255;
+      }
+    }
+    // Last 50 rows: green (inserted)
+    for (let y = 100; y < 150; y++) {
+      for (let x = 0; x < 100; x++) {
+        const idx = (100 * y + x) << 2;
+        current.data[idx] = 0;
+        current.data[idx + 1] = 255;
+        current.data[idx + 2] = 0;
+        current.data[idx + 3] = 255;
+      }
+    }
+
+    const screenshot1: Screenshot = {
+      data: PNG.sync.write(baseline),
+      width: 100,
+      height: 100,
+      checkpoint: 'test'
+    };
+
+    const screenshot2: Screenshot = {
+      data: PNG.sync.write(current),
+      width: 100,
+      height: 150,
+      checkpoint: 'test'
+    };
+
+    const result = await differ.compare(screenshot1, screenshot2);
+
+    // 5000 pixels inserted out of union (10000 + 15000 = 25000)
+    // Expected: 5000/25000 * 100 = 20%
+    expect(result.pixelDiffPercent).toBeLessThanOrEqual(100);
+    expect(result.pixelDiffPercent).toBeGreaterThan(0);
+    expect(result.pixelDiffPercent).toBeLessThan(50); // Should be around 20%
+  });
 });
