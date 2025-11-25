@@ -72,16 +72,18 @@ module.exports = {
 
 ### Structured Data
 
-The `DiffResult` includes:
+SmartDiffer returns a `DiffResult` (the standard Differ interface):
 
 ```typescript
-{
-  diffImage: Buffer,           // Annotated PNG with overlays
-  pixelDiffPercent: number,    // 0-100 percentage of changed pixels
-  changedRegions: BoundingBox[], // Coordinates of changed areas
-  identical: boolean           // True if 0% diff
+interface DiffResult {
+  diffImage: Buffer;           // Annotated PNG with overlays
+  pixelDiffPercent: number;    // 0-100 percentage of changed pixels
+  changedRegions: BoundingBox[]; // Coordinates of changed areas
+  identical: boolean;          // True if 0% diff
 }
 ```
+
+**Note:** Internally, SmartDiffer uses a `SmartDiffResult` type with additional fields (`strategy`, `confidence`, `regions: AlignmentRegion[]`) for the two-tier algorithm, but these are transformed into the standard `DiffResult` format for the public API.
 
 ## Backward Compatibility
 

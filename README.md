@@ -65,7 +65,9 @@ Smart diffing uses a two-tier hybrid approach:
 ```javascript
 // visual-uat.config.js
 module.exports = {
-  differ: '@visual-uat/smart-differ', // Default
+  plugins: {
+    differ: '@visual-uat/smart-differ', // Default
+  },
   smartDiffer: {
     adaptiveThreshold: 0.95,    // Similarity required for row match
     searchWindow: 50,           // ±N rows to search for alignment

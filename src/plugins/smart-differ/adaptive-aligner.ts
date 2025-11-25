@@ -187,6 +187,7 @@ export class AdaptiveAligner {
     if (row1 >= img1.height || row2 >= img2.height) return 0;
 
     const width = Math.min(img1.width, img2.width);
+    if (width === 0) return 0;
     let matchingPixels = 0;
 
     for (let x = 0; x < width; x++) {
