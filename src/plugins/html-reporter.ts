@@ -6,6 +6,7 @@ import { ReporterPlugin, ReporterOptions } from '../types/plugins';
 import { RunResult, TestResult, CheckpointResult } from '../orchestrator/types/results';
 import * as fs from 'fs';
 import * as path from 'path';
+import { exec } from 'child_process';
 
 export class HTMLReporter implements ReporterPlugin {
   async generate(result: RunResult, options: ReporterOptions): Promise<void> {
@@ -29,6 +30,31 @@ export class HTMLReporter implements ReporterPlugin {
       // Symlink creation is optional - report was already generated successfully
       console.warn('Failed to create latest.html symlink:', error instanceof Error ? error.message : error);
     }
+
+    // Open report in browser if requested
+    if (options.autoOpen) {
+      this.openInBrowser(filepath);
+    }
+  }
+
+  private openInBrowser(filepath: string): void {
+    const absolutePath = path.resolve(filepath);
+    const platform = process.platform;
+
+    let command: string;
+    if (platform === 'darwin') {
+      command = `open "${absolutePath}"`;
+    } else if (platform === 'win32') {
+      command = `start "" "${absolutePath}"`;
+    } else {
+      command = `xdg-open "${absolutePath}"`;
+    }
+
+    exec(command, (error) => {
+      if (error) {
+        console.warn('Failed to open report in browser:', error.message);
+      }
+    });
   }
 
   private generateFilename(timestamp: number, runId: string): string {

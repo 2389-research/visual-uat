@@ -5,6 +5,11 @@ import { HTMLReporter } from './html-reporter';
 import { RunResult } from '../orchestrator/types/results';
 import * as fs from 'fs';
 import * as path from 'path';
+import { exec } from 'child_process';
+
+jest.mock('child_process', () => ({
+  exec: jest.fn((cmd, callback) => callback && callback(null, '', ''))
+}));
 
 describe('HTMLReporter', () => {
   const testOutputDir = '.visual-uat/test-reports';
@@ -778,6 +783,67 @@ describe('HTMLReporter', () => {
       // @ts-ignore
       const html = reporter.generateFilterButtonGroup(result);
       expect(html).toContain('class="tooltip"');
+    });
+  });
+
+  describe('autoOpen', () => {
+    const mockExec = exec as jest.MockedFunction<typeof exec>;
+
+    beforeEach(() => {
+      mockExec.mockClear();
+    });
+
+    it('should open report in browser when autoOpen is true', async () => {
+      const reporter = new HTMLReporter();
+      const result: RunResult = {
+        runId: 'a3f7b9c',
+        timestamp: new Date('2024-11-18T14:30:22Z').getTime(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      };
+
+      await reporter.generate(result, { outputDir: testOutputDir, autoOpen: true });
+
+      expect(mockExec).toHaveBeenCalled();
+      const execCall = mockExec.mock.calls[0][0] as string;
+      expect(execCall).toContain('2024-11-18-14-30-22-a3f7b9c.html');
+    });
+
+    it('should not open report when autoOpen is false', async () => {
+      const reporter = new HTMLReporter();
+      const result: RunResult = {
+        runId: 'a3f7b9c',
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      };
+
+      await reporter.generate(result, { outputDir: testOutputDir, autoOpen: false });
+
+      expect(mockExec).not.toHaveBeenCalled();
+    });
+
+    it('should not open report when autoOpen is not specified', async () => {
+      const reporter = new HTMLReporter();
+      const result: RunResult = {
+        runId: 'a3f7b9c',
+        timestamp: Date.now(),
+        baseBranch: 'main',
+        currentBranch: 'feature/test',
+        config: {} as any,
+        tests: [],
+        summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
+      };
+
+      await reporter.generate(result, { outputDir: testOutputDir });
+
+      expect(mockExec).not.toHaveBeenCalled();
     });
   });
 });
