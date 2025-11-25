@@ -41,4 +41,5 @@ export interface ExecutionContext {
   currentResults: Map<string, RawTestResult>;
   runResult: RunResult | null;
   keepWorktrees: boolean;
+  codeChangeSummary: string | null;
 }

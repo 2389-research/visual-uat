@@ -334,7 +334,8 @@ describe('RunCommandHandler.handleSetup', () => {
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleSetup(context, { force: true });
@@ -391,7 +392,8 @@ describe('RunCommandHandler.handleSetup', () => {
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     // Don't pass ports in options - should use context ports
@@ -432,7 +434,8 @@ describe('RunCommandHandler.handleSetup', () => {
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
@@ -527,7 +530,8 @@ describe('RunCommandHandler.handleExecuteBase', () => {
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleExecuteBase(context);
@@ -584,7 +588,8 @@ describe('RunCommandHandler.handleExecuteBase', () => {
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleExecuteBase(context);
@@ -674,7 +679,8 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     await (handler as any).handleExecuteCurrent(context);
@@ -739,7 +745,8 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       ]),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleExecuteCurrent(context);
@@ -803,7 +810,8 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       ]),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleExecuteCurrent(context);
@@ -897,7 +905,8 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
         }]
       ]),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleCompareAndEvaluate(context);
@@ -972,7 +981,8 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
         }]
       ]),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleCompareAndEvaluate(context);
@@ -1030,7 +1040,8 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
         }]
       ]),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleCompareAndEvaluate(context);
@@ -1112,7 +1123,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1161,7 +1173,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1212,7 +1225,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1280,7 +1294,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1333,7 +1348,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1390,7 +1406,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1447,7 +1464,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1500,7 +1518,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1566,7 +1585,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1656,7 +1676,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1722,7 +1743,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1788,7 +1810,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1859,7 +1882,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -1930,7 +1954,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
         tests: [],
         summary: { total: 0, passed: 0, failed: 0, errored: 0, needsReview: 0 }
       },
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleStoreResults(context);
@@ -2001,7 +2026,8 @@ describe('RunCommandHandler.handleCleanup', () => {
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleCleanup(context);
@@ -2042,7 +2068,8 @@ describe('RunCommandHandler.handleCleanup', () => {
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
-      keepWorktrees: true
+      keepWorktrees: true,
+      codeChangeSummary: null
     };
 
     const nextState = await (handler as any).handleCleanup(context);

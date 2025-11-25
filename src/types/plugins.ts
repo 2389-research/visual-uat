@@ -67,6 +67,7 @@ export interface EvaluationInput {
   diffResult: DiffResult;
   baselineImage: Buffer;
   currentImage: Buffer;
+  codeChanges?: string;
 }
 
 export interface EvaluationResult {

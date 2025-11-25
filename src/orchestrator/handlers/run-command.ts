@@ -125,6 +125,9 @@ export class RunCommandHandler {
         encoding: 'utf-8'
       }).trim();
 
+      // Capture code changes between branches for evaluator context
+      context.codeChangeSummary = this.captureCodeChanges(context.scope.baseBranch);
+
       // Create worktrees
       const worktreeManager = new WorktreeManager(this.projectRoot);
       context.worktrees = await worktreeManager.createWorktrees(
@@ -323,7 +326,8 @@ export class RunCommandHandler {
               checkpoint: path.basename(checkpointName, '.png'),
               diffResult: diffResult,
               baselineImage: baseImageData,
-              currentImage: currentImageData
+              currentImage: currentImageData,
+              codeChanges: context.codeChangeSummary || undefined
             });
           } else {
             // No differences, auto-pass
@@ -499,6 +503,65 @@ export class RunCommandHandler {
     }
   }
 
+  private captureCodeChanges(baseBranch: string): string | null {
+    try {
+      // Get a summary of code changes between base branch and HEAD
+      const diffStat = execSync(`git diff ${baseBranch}...HEAD --stat`, {
+        cwd: this.projectRoot,
+        encoding: 'utf-8',
+        maxBuffer: 1024 * 1024 // 1MB buffer
+      }).trim();
+
+      if (!diffStat) {
+        return null;
+      }
+
+      // Also get a brief summary of the actual changes (limited to avoid huge diffs)
+      const diffSummary = execSync(
+        `git diff ${baseBranch}...HEAD --no-color --shortstat`,
+        {
+          cwd: this.projectRoot,
+          encoding: 'utf-8'
+        }
+      ).trim();
+
+      // Get commit messages between branches for intent context
+      const commitMessages = execSync(
+        `git log ${baseBranch}..HEAD --oneline --no-decorate`,
+        {
+          cwd: this.projectRoot,
+          encoding: 'utf-8'
+        }
+      ).trim();
+
+      const parts: string[] = [];
+
+      if (commitMessages) {
+        parts.push(`Commits:\n${commitMessages}`);
+      }
+
+      if (diffSummary) {
+        parts.push(`Changes: ${diffSummary}`);
+      }
+
+      if (diffStat) {
+        // Limit stat output to first 20 files to avoid overwhelming the prompt
+        const statLines = diffStat.split('\n');
+        const limitedStat = statLines.slice(0, 20).join('\n');
+        if (statLines.length > 20) {
+          parts.push(`Files changed (showing first 20):\n${limitedStat}\n... and ${statLines.length - 20} more files`);
+        } else {
+          parts.push(`Files changed:\n${limitedStat}`);
+        }
+      }
+
+      return parts.join('\n\n');
+    } catch (error) {
+      console.warn('Could not capture code changes:', error);
+      return null;
+    }
+  }
+
   async execute(options: RunOptions): Promise<number> {
     // Store runOptions for access by helper methods
     this.runOptions = options;
@@ -537,7 +600,8 @@ export class RunCommandHandler {
       baseResults: new Map<string, RawTestResult>(),
       currentResults: new Map<string, RawTestResult>(),
       runResult: null,
-      keepWorktrees: options.keepWorktrees || false
+      keepWorktrees: options.keepWorktrees || false,
+      codeChangeSummary: null
     };
 
     try {

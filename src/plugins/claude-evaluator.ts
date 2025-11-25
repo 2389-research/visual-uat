@@ -113,6 +113,15 @@ export class ClaudeEvaluator implements Evaluator {
   }
 
   private buildPrompt(input: EvaluationInput): string {
+    let codeChangesSection = '';
+    if (input.codeChanges) {
+      codeChangesSection = `
+**Code Changes (git diff between branches):**
+${input.codeChanges}
+
+`;
+    }
+
     return `You are evaluating visual changes in a UI test.
 
 **Test Intent:**
@@ -123,7 +132,7 @@ ${input.intent}
 **Diff Metrics:**
 - Pixel difference: ${input.diffResult.pixelDiffPercent.toFixed(2)}%
 - Changed regions: ${input.diffResult.changedRegions.length}
-
+${codeChangesSection}
 **Images Provided:**
 1. **Baseline** - Screenshot from the base branch (before changes)
 2. **Current** - Screenshot from the current branch (after changes)
@@ -133,12 +142,12 @@ ${input.intent}
    - These colors are visualization markers only, NOT actual colors in the UI
 
 **Your Task:**
-Compare the actual UI changes between baseline and current screenshots. Determine if the visual changes match the test intent. Ignore the diff visualization colors - focus on what actually changed in the UI.
+Compare the actual UI changes between baseline and current screenshots. Determine if the visual changes match the test intent and the code changes. Ignore the diff visualization colors - focus on what actually changed in the UI.
 
 Respond in this exact format:
 PASS: true/false
 CONFIDENCE: 0.0-1.0
-REASON: <brief explanation of whether UI changes align with intent>
+REASON: <brief explanation of whether UI changes align with intent and code changes>
 
 Be strict: only pass if changes clearly align with intent.`;
   }

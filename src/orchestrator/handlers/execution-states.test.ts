@@ -20,7 +20,8 @@ describe('Execution State Types', () => {
       baseResults: new Map<string, RawTestResult>(),
       currentResults: new Map<string, RawTestResult>(),
       runResult: null,
-      keepWorktrees: false
+      keepWorktrees: false,
+      codeChangeSummary: null
     };
 
     expect(context.scope?.type).toBe('full');
