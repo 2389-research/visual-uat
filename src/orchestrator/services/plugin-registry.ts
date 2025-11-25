@@ -5,7 +5,7 @@ import { Config } from '../../types/config';
 import { TestGenerator, TargetRunner, Differ, Evaluator, ReporterPlugin } from '../../types/plugins';
 import { StubTestGenerator } from '../../plugins/test-generator-stub';
 import { WebRunner } from '../../plugins/web-runner';
-import { PixelmatchDiffer } from '../../plugins/pixelmatch-differ';
+import { SmartDiffer } from '../../plugins/smart-differ';
 import { ClaudeEvaluator } from '../../plugins/claude-evaluator';
 import { TerminalReporter } from '../../plugins/terminal-reporter';
 import { HTMLReporter } from '../../plugins/html-reporter';
@@ -25,7 +25,7 @@ export class PluginRegistry {
   private builtins: Record<string, any> = {
     '@visual-uat/stub-generator': StubTestGenerator,
     '@visual-uat/web-runner': WebRunner,
-    '@visual-uat/pixelmatch-differ': PixelmatchDiffer,
+    '@visual-uat/smart-differ': SmartDiffer,
     '@visual-uat/claude-evaluator': ClaudeEvaluator
   };
 
