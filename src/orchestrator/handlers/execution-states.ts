@@ -35,6 +35,8 @@ export interface ExecutionContext {
   serverManager: ServerManager;
   baseUrl: string;
   currentUrl: string;
+  basePort: number;
+  currentPort: number;
   baseResults: Map<string, RawTestResult>;
   currentResults: Map<string, RawTestResult>;
   runResult: RunResult | null;

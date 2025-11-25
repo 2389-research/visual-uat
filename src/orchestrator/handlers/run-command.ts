@@ -131,19 +131,16 @@ export class RunCommandHandler {
         context.scope.baseBranch
       );
 
-      // Start servers
-      const basePort = options.basePort || 34567;
-      const currentPort = options.currentPort || 34568;
-
-      if (basePort === currentPort) {
+      // Start servers using ports from context (set by execute())
+      if (context.basePort === context.currentPort) {
         throw new Error(
-          `Base port and current port cannot be the same (both are ${basePort}). ` +
+          `Base port and current port cannot be the same (both are ${context.basePort}). ` +
           `Please specify different ports using --base-port and --current-port options.`
         );
       }
 
-      await context.serverManager.startServer(context.worktrees.base, basePort);
-      await context.serverManager.startServer(context.worktrees.current, currentPort);
+      await context.serverManager.startServer(context.worktrees.base, context.basePort);
+      await context.serverManager.startServer(context.worktrees.current, context.currentPort);
 
       return 'EXECUTE_BASE';
     } catch (error) {
@@ -535,6 +532,8 @@ export class RunCommandHandler {
       }),
       baseUrl: `http://localhost:${basePort}`,
       currentUrl: `http://localhost:${currentPort}`,
+      basePort,
+      currentPort,
       baseResults: new Map<string, RawTestResult>(),
       currentResults: new Map<string, RawTestResult>(),
       runResult: null,

@@ -329,6 +329,8 @@ describe('RunCommandHandler.handleSetup', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -340,6 +342,64 @@ describe('RunCommandHandler.handleSetup', () => {
     expect(nextState).toBe('EXECUTE_BASE');
     expect(context.worktrees).not.toBeNull();
     expect(mockCreateWorktrees).toHaveBeenCalled();
+  });
+
+  it('should use ports from context, not from options', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+    const mockExecSync = child_process.execSync as jest.MockedFunction<typeof child_process.execSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    // Mock for git branch --show-current
+    mockExecSync.mockReturnValue('feature/test-branch' as any);
+
+    // Mock WorktreeManager
+    const mockCreateWorktrees = jest.fn().mockResolvedValue({
+      base: '/worktrees/base',
+      current: '/project/root'
+    });
+    (WorktreeManager as jest.Mock).mockImplementation(() => ({
+      createWorktrees: mockCreateWorktrees
+    }));
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+    mockExistsSync.mockReturnValue(true);
+
+    const mockStartServer = jest.fn().mockResolvedValue(undefined);
+    const context: ExecutionContext = {
+      scope: {
+        type: 'full',
+        baseBranch: 'main',
+        specsToGenerate: ['tests/login.md']
+      },
+      worktrees: null,
+      serverManager: { cleanup: jest.fn(), startServer: mockStartServer } as any,
+      baseUrl: 'http://localhost:55555',
+      currentUrl: 'http://localhost:55556',
+      basePort: 55555,
+      currentPort: 55556,
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    // Don't pass ports in options - should use context ports
+    await (handler as any).handleSetup(context, { force: true });
+
+    // Should use the dynamic ports from context, not hardcoded 34567/34568
+    expect(mockStartServer).toHaveBeenCalledWith('/worktrees/base', 55555);
+    expect(mockStartServer).toHaveBeenCalledWith('/project/root', 55556);
   });
 
   it('should return FAILED when base and current ports are the same', async () => {
@@ -367,6 +427,8 @@ describe('RunCommandHandler.handleSetup', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34567",
+      basePort: 8080,
+      currentPort: 8080,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -375,7 +437,7 @@ describe('RunCommandHandler.handleSetup', () => {
 
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-    const nextState = await (handler as any).handleSetup(context, { basePort: 8080, currentPort: 8080 });
+    const nextState = await (handler as any).handleSetup(context, {});
 
     expect(nextState).toBe('FAILED');
     expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -460,6 +522,8 @@ describe('RunCommandHandler.handleExecuteBase', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -515,6 +579,8 @@ describe('RunCommandHandler.handleExecuteBase', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -603,6 +669,8 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -659,6 +727,8 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map([
         ['tests/login.md', {
           testPath: 'tests/generated/login.spec.ts',
@@ -721,6 +791,8 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map([
         ['tests/broken.md', {
           testPath: 'tests/generated/broken.spec.ts',
@@ -806,6 +878,8 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map([
         ['tests/login.md', {
           testPath: 'tests/generated/login.spec.ts',
@@ -879,6 +953,8 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map([
         ['tests/login.md', {
           testPath: 'tests/generated/login.spec.ts',
@@ -934,6 +1010,8 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map([
         ['tests/broken.md', {
           testPath: 'tests/generated/broken.spec.ts',
@@ -1021,6 +1099,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1068,6 +1148,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1117,6 +1199,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1183,6 +1267,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1234,6 +1320,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1289,6 +1377,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1344,6 +1434,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1395,6 +1487,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1459,6 +1553,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1547,6 +1643,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1611,6 +1709,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1675,6 +1775,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1744,6 +1846,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1813,6 +1917,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: {
@@ -1890,6 +1996,8 @@ describe('RunCommandHandler.handleCleanup', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,
@@ -1929,6 +2037,8 @@ describe('RunCommandHandler.handleCleanup', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map(),
       currentResults: new Map(),
       runResult: null,

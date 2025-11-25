@@ -15,6 +15,8 @@ describe('Execution State Types', () => {
       serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
       baseUrl: "http://localhost:34567",
       currentUrl: "http://localhost:34568",
+      basePort: 34567,
+      currentPort: 34568,
       baseResults: new Map<string, RawTestResult>(),
       currentResults: new Map<string, RawTestResult>(),
       runResult: null,
