@@ -27,7 +27,7 @@ export class HTMLReporter implements ReporterPlugin {
 
   private generateHTML(result: RunResult, options: ReporterOptions): string {
     const testCardsHTML = result.tests.map(test => this.generateTestCard(test)).join('\n');
-    const filterBarHTML = this.generateFilterBar();
+    const filterBarHTML = this.generateFilterButtonGroup(result);
     const scriptHTML = this.generateFilterScript();
 
     return `<!DOCTYPE html>
@@ -55,97 +55,184 @@ export class HTMLReporter implements ReporterPlugin {
       margin-top: 10px;
       color: #666;
     }
-    .summary {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
+    .status-banner {
+      /* Inline styles in HTML, no additional CSS needed */
     }
-    .summary-box {
-      flex: 1;
-      padding: 20px;
-      border-radius: 6px;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .summary-box:hover {
-      transform: scale(1.05);
-    }
-    .summary-box.passed {
-      background: #10b981;
-      color: white;
-    }
-    .summary-box.needs-review {
-      background: #f59e0b;
-      color: white;
-    }
-    .summary-box.failed {
-      background: #ef4444;
-      color: white;
-    }
-    .summary-box.errored {
-      background: #6b7280;
-      color: white;
-    }
-    .summary-box .count {
-      font-size: 36px;
-      font-weight: bold;
-    }
-    .summary-box .label {
-      font-size: 14px;
-      text-transform: uppercase;
-      margin-top: 5px;
-    }
-    .filter-bar {
+    .results-container {
       background: white;
-      padding: 15px 20px;
+      padding: 20px;
       border-radius: 8px;
       margin-bottom: 20px;
+    }
+    .filter-bar {
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 20px;
+    }
+    .filter-bar-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 12px;
+      letter-spacing: 0.025em;
       display: flex;
-      gap: 15px;
       align-items: center;
-      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .filter-bar-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+    .filter-controls {
+      display: flex;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      overflow: visible;
+      position: relative;
     }
     .filter-buttons {
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+      gap: 0;
+      flex: 0 0 auto;
     }
     .filter-button {
-      padding: 8px 16px;
-      border: 2px solid #e5e7eb;
-      border-radius: 6px;
-      background: white;
+      padding: 10px 20px;
+      border: none;
+      border-right: 1px solid #e5e7eb;
+      background: #f9fafb;
+      color: #6b7280;
       cursor: pointer;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       transition: all 0.2s;
+      white-space: nowrap;
+      position: relative;
     }
-    .filter-button:hover {
-      border-color: #9ca3af;
+    .filter-button:first-child {
+      border-top-left-radius: 6px;
+      border-bottom-left-radius: 6px;
+    }
+    .filter-button:last-of-type {
+      border-right: none;
+    }
+    .filter-button:hover:not(:disabled) {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .filter-button:hover:not(:disabled) span {
+      transform: translateY(-1px);
+      display: inline-block;
+    }
+    .filter-button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
     .filter-button.active {
-      border-color: #3b82f6;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    /* Color-specific styles */
+    .filter-all:not(.active) {
       background: #eff6ff;
       color: #1e40af;
+      border-color: #bfdbfe;
+    }
+    .filter-all.active {
+      background: #3b82f6;
+    }
+    .filter-passed:not(.active) {
+      background: #d1fae5;
+      color: #065f46;
+      border-color: #6ee7b7;
+    }
+    .filter-passed.active {
+      background: #10b981;
+    }
+    .filter-needs-review:not(.active) {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
+    }
+    .filter-needs-review.active {
+      background: #f59e0b;
+    }
+    .filter-failed:not(.active) {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fca5a5;
+    }
+    .filter-failed.active {
+      background: #ef4444;
+    }
+    .filter-errored:not(.active) {
+      background: #ffedd5;
+      color: #9a3412;
+      border-color: #fdba74;
+    }
+    .filter-errored.active {
+      background: #f97316;
     }
     .search-box {
       flex: 1;
       min-width: 200px;
+      border-left: 1px solid #e5e7eb;
     }
     #search-input {
       width: 100%;
-      padding: 8px 12px;
-      border: 2px solid #e5e7eb;
-      border-radius: 6px;
+      padding: 10px 16px;
+      border: none;
+      background: white;
       font-size: 14px;
-    }
-    #search-input:focus {
       outline: none;
-      border-color: #3b82f6;
+      box-sizing: border-box;
+    }
+    #search-input::placeholder {
+      color: #9ca3af;
+    }
+    /* Custom Tooltip Styles */
+    .tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: #1f2937;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-line;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 1000;
+      min-width: 200px;
+      max-width: 300px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    }
+    .tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #1f2937;
+    }
+    .filter-button:hover .tooltip {
+      opacity: 1;
+    }
+    .run-id-container {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+    .run-id-container:hover .tooltip {
+      opacity: 1;
     }
     .tests {
-      margin-top: 20px;
+      margin-top: 0;
     }
     .test-card {
       background: white;
@@ -342,38 +429,14 @@ export class HTMLReporter implements ReporterPlugin {
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>Visual UAT Report</h1>
-    <div class="metadata">
-      <div><strong>Branch:</strong> ${result.currentBranch}</div>
-      <div><strong>Base:</strong> ${result.baseBranch}</div>
-      <div><strong>Run ID:</strong> ${result.runId}</div>
-      <div><strong>Date:</strong> ${new Date(result.timestamp).toLocaleString()}</div>
-    </div>
-    <div class="summary">
-      <div class="summary-box passed" data-filter="passed">
-        <div class="count">${result.summary.passed}</div>
-        <div class="label">Passed</div>
-      </div>
-      <div class="summary-box needs-review" data-filter="needs-review">
-        <div class="count">${result.summary.needsReview}</div>
-        <div class="label">Needs Review</div>
-      </div>
-      <div class="summary-box failed" data-filter="failed">
-        <div class="count">${result.summary.failed}</div>
-        <div class="label">Failed</div>
-      </div>
-      <div class="summary-box errored" data-filter="errored">
-        <div class="count">${result.summary.errored}</div>
-        <div class="label">Errored</div>
-      </div>
-    </div>
-  </div>
+  ${this.generateStatusBanner(result)}
 
-  ${filterBarHTML}
+  <div class="results-container">
+    ${filterBarHTML}
 
-  <div class="tests">
-    ${testCardsHTML}
+    <div class="tests">
+      ${testCardsHTML}
+    </div>
   </div>
 
   ${scriptHTML}
@@ -481,18 +544,49 @@ export class HTMLReporter implements ReporterPlugin {
     return str.replace(/[&<>"']/g, char => htmlEscapeMap[char]);
   }
 
-  private generateFilterBar(): string {
+  private generateFilterButtonGroup(result: RunResult): string {
+    const summary = result.summary;
+    const total = summary.passed + summary.needsReview + summary.failed + summary.errored;
+
+    const allTooltip = this.escapeHTML(this.generateAllTooltip(summary));
+    const passedTooltip = summary.passed > 0 ? this.escapeHTML(this.generateStatusTooltip(result.tests, 'passed')) : '';
+    const reviewTooltip = summary.needsReview > 0 ? this.escapeHTML(this.generateStatusTooltip(result.tests, 'needs-review')) : '';
+    const failedTooltip = summary.failed > 0 ? this.escapeHTML(this.generateStatusTooltip(result.tests, 'failed')) : '';
+    const erroredTooltip = summary.errored > 0 ? this.escapeHTML(this.generateStatusTooltip(result.tests, 'errored')) : '';
+
     return `
   <div class="filter-bar">
-    <div class="filter-buttons">
-      <button class="filter-button active" data-filter="all">All</button>
-      <button class="filter-button" data-filter="passed">Passed</button>
-      <button class="filter-button" data-filter="needs-review">Needs Review</button>
-      <button class="filter-button" data-filter="failed">Failed</button>
-      <button class="filter-button" data-filter="errored">Errored</button>
-    </div>
-    <div class="search-box">
-      <input type="text" id="search-input" placeholder="Search tests by name...">
+    <div class="filter-bar-label">Filter Tests</div>
+    <div class="filter-controls">
+      <div class="filter-buttons">
+        <button class="filter-button filter-all active" data-filter="all" data-count="${total}">
+          <span>All (${total})</span>
+          <div class="tooltip">${allTooltip}</div>
+        </button>
+        <button class="filter-button filter-passed" data-filter="passed" data-count="${summary.passed}"
+                ${summary.passed === 0 ? 'disabled' : ''}>
+          <span>Passed (${summary.passed})</span>
+          ${summary.passed > 0 ? `<div class="tooltip">${passedTooltip}</div>` : ''}
+        </button>
+        <button class="filter-button filter-needs-review" data-filter="needs-review" data-count="${summary.needsReview}"
+                ${summary.needsReview === 0 ? 'disabled' : ''}>
+          <span>Needs Review (${summary.needsReview})</span>
+          ${summary.needsReview > 0 ? `<div class="tooltip">${reviewTooltip}</div>` : ''}
+        </button>
+        <button class="filter-button filter-failed" data-filter="failed" data-count="${summary.failed}"
+                ${summary.failed === 0 ? 'disabled' : ''}>
+          <span>Failed (${summary.failed})</span>
+          ${summary.failed > 0 ? `<div class="tooltip">${failedTooltip}</div>` : ''}
+        </button>
+        <button class="filter-button filter-errored" data-filter="errored" data-count="${summary.errored}"
+                ${summary.errored === 0 ? 'disabled' : ''}>
+          <span>Errored (${summary.errored})</span>
+          ${summary.errored > 0 ? `<div class="tooltip">${erroredTooltip}</div>` : ''}
+        </button>
+      </div>
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search tests by name...">
+      </div>
     </div>
   </div>`;
   }
@@ -505,7 +599,6 @@ export class HTMLReporter implements ReporterPlugin {
       let currentSearchText = '';
 
       const filterButtons = document.querySelectorAll('.filter-button');
-      const summaryBoxes = document.querySelectorAll('.summary-box');
       const searchInput = document.getElementById('search-input');
       const testCards = document.querySelectorAll('.test-card');
 
@@ -537,14 +630,9 @@ export class HTMLReporter implements ReporterPlugin {
 
       filterButtons.forEach(button => {
         button.addEventListener('click', function() {
-          currentStatusFilter = this.getAttribute('data-filter');
-          setActiveButton(currentStatusFilter);
-          applyFilters();
-        });
-      });
-
-      summaryBoxes.forEach(box => {
-        box.addEventListener('click', function() {
+          if (this.hasAttribute('disabled')) {
+            return; // Skip disabled buttons
+          }
           currentStatusFilter = this.getAttribute('data-filter');
           setActiveButton(currentStatusFilter);
           applyFilters();
@@ -606,5 +694,86 @@ export class HTMLReporter implements ReporterPlugin {
       }
     }
   </script>`;
+  }
+
+  private calculateOverallStatus(summary: { passed: number; needsReview: number; failed: number; errored: number }): 'passed' | 'needs-review' | 'failed' {
+    if (summary.failed > 0 || summary.errored > 0) {
+      return 'failed';
+    }
+    if (summary.needsReview > 0) {
+      return 'needs-review';
+    }
+    return 'passed';
+  }
+
+  private generateStatusBanner(result: RunResult): string {
+    const overallStatus = this.calculateOverallStatus(result.summary);
+
+    const statusConfig = {
+      'passed': {
+        color: '#10b981',
+        icon: '✓',
+        text: 'All Tests Passed'
+      },
+      'needs-review': {
+        color: '#f59e0b',
+        icon: '⚠',
+        text: `${result.summary.needsReview} Test${result.summary.needsReview === 1 ? '' : 's'} Need Review`
+      },
+      'failed': {
+        color: '#ef4444',
+        icon: '✗',
+        text: 'Tests Failed'
+      }
+    };
+
+    const config = statusConfig[overallStatus];
+    const totalTests = result.summary.passed + result.summary.needsReview + result.summary.failed + result.summary.errored;
+
+    return `
+  <div class="status-banner" style="background: ${config.color}; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+      <div style="flex: 1; min-width: 300px;">
+        <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">
+          <span style="margin-right: 10px;">${config.icon}</span>
+          ${config.text}
+        </div>
+        <div style="font-size: 14px; opacity: 0.9;">
+          Comparing: <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.currentBranch)}</code>
+          →
+          <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 3px;">${this.escapeHTML(result.baseBranch)}</code>
+        </div>
+      </div>
+      <div style="text-align: right; opacity: 0.9; font-size: 14px;">
+        <div><strong>${totalTests} tests</strong></div>
+        <div class="run-id-container">
+          Run ID: ${result.runId.slice(-6)}
+          <div class="tooltip">${this.escapeHTML(result.runId)}</div>
+        </div>
+        <div>${new Date(result.timestamp).toLocaleString()}</div>
+      </div>
+    </div>
+  </div>`;
+  }
+
+  private generateAllTooltip(summary: { passed: number; needsReview: number; failed: number; errored: number }): string {
+    const total = summary.passed + summary.needsReview + summary.failed + summary.errored;
+    const percent = (count: number) => total > 0 ? Math.round((count / total) * 100) : 0;
+
+    return `Passed: ${summary.passed} (${percent(summary.passed)}%)
+Needs Review: ${summary.needsReview} (${percent(summary.needsReview)}%)
+Failed: ${summary.failed} (${percent(summary.failed)}%)
+Errored: ${summary.errored} (${percent(summary.errored)}%)`;
+  }
+
+  private generateStatusTooltip(tests: TestResult[], status: string): string {
+    const filteredTests = tests.filter(t => t.status === status);
+    const names = filteredTests.map(t => path.basename(t.specPath, '.md'));
+
+    if (names.length <= 4) {
+      return names.join('\n');
+    }
+
+    return names.slice(0, 4).join('\n') + `\n...and ${names.length - 4} more`;
   }
 }
