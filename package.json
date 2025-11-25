@@ -15,8 +15,8 @@
     "test": "jest",
     "dev": "tsc --watch",
     "start": "cd examples/demo-app && npm start",
-    "setup:dogfood": "cd examples/demo-app && npx visual-uat run --all",
-    "test:dogfood": "npx visual-uat run"
+    "setup:dogfood": "cd examples/demo-app && node ../../dist/cli.js run --all",
+    "test:dogfood": "node dist/cli.js run"
   },
   "keywords": [
     "testing",
