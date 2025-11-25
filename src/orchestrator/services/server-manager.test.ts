@@ -102,6 +102,22 @@ describe('ServerManager', () => {
         })
       );
     });
+
+    it('should replace $PORT in startCommand with actual port', async () => {
+      const manager = new ServerManager({ startCommand: 'npx serve . -l $PORT' });
+
+      await manager.startServer('/test/dir', 8080);
+
+      // $PORT should be replaced with the actual port value
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'npx',
+        ['serve', '.', '-l', '8080'],
+        expect.objectContaining({
+          cwd: '/test/dir',
+          env: expect.objectContaining({ PORT: '8080' })
+        })
+      );
+    });
   });
 
   describe('cleanup', () => {

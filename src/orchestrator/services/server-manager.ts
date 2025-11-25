@@ -29,7 +29,10 @@ export class ServerManager {
   async startServer(directory: string, port: number): Promise<ServerInfo> {
     console.log(`Starting server in ${directory} on port ${port}...`);
 
-    const serverProcess = spawn(this.startCommand, this.startArgs, {
+    // Replace $PORT in args with actual port value (shell variables don't expand in spawn)
+    const argsWithPort = this.startArgs.map(arg => arg.replace(/\$PORT/g, port.toString()));
+
+    const serverProcess = spawn(this.startCommand, argsWithPort, {
       cwd: directory,
       env: {
         ...process.env,
