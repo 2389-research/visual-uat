@@ -7,7 +7,7 @@ module.exports = {
   plugins: {
     testGenerator: '@visual-uat/stub-generator',
     targetRunner: '@visual-uat/web-runner',
-    differ: '@visual-uat/pixelmatch-differ',
+    differ: '@visual-uat/smart-differ',
     evaluator: '@visual-uat/claude-evaluator'
   },
   targetRunner: {

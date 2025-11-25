@@ -2,8 +2,11 @@
 
 Test the visual structure and layout of the generated HTML report.
 
+## URL
+/latest.html
+
 ## Test Steps
-1. Navigate to the report page (latest.html)
+1. Navigate to /latest.html
 2. Wait for page to fully render
 3. Capture full-page screenshot
 

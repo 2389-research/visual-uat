@@ -17,6 +17,18 @@ export class HTMLReporter implements ReporterPlugin {
 
     const html = this.generateHTML(result, options);
     fs.writeFileSync(filepath, html, 'utf-8');
+
+    // Create/update latest.html symlink
+    try {
+      const latestPath = path.join(outputDir, 'latest.html');
+      if (fs.existsSync(latestPath)) {
+        fs.unlinkSync(latestPath);
+      }
+      fs.symlinkSync(filename, latestPath, 'file');
+    } catch (error) {
+      // Symlink creation is optional - report was already generated successfully
+      console.warn('Failed to create latest.html symlink:', error instanceof Error ? error.message : error);
+    }
   }
 
   private generateFilename(timestamp: number, runId: string): string {
