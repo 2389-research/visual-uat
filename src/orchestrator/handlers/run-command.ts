@@ -206,7 +206,7 @@ export class RunCommandHandler {
       for (const specPath of specsToRun) {
         const baseName = path.basename(specPath, '.md');
         const testPath = path.resolve(
-          this.projectRoot,
+          context.worktrees!.current,
           this.config.generatedDir,
           `${baseName}.spec.ts`
         );

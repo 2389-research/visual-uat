@@ -557,6 +557,66 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
     jest.clearAllMocks();
   });
 
+  it('should resolve testPath from worktree path, not projectRoot', async () => {
+    const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+    const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
+    const mockReadFileSync = fs.readFileSync as jest.MockedFunction<typeof fs.readFileSync>;
+
+    // Mock for SpecManifest constructor
+    mockExistsSync.mockReturnValue(false);
+    mockMkdirSync.mockReturnValue(undefined);
+    mockReadFileSync.mockImplementation((path: any) => {
+      if (path.includes('manifest.json')) {
+        return '{}';
+      }
+      return 'Test content';
+    });
+
+    let capturedTestPath: string | undefined;
+    const mockRunTest = jest.fn().mockImplementation((testPath: string) => {
+      capturedTestPath = testPath;
+      return {
+        testPath,
+        status: 'passed',
+        duration: 1500,
+        screenshots: ['initial.png']
+      };
+    });
+
+    // Mock TestRunner to capture the testPath argument
+    (TestRunner as jest.Mock).mockImplementation(() => ({
+      runTest: mockRunTest
+    }));
+
+    const handler = new RunCommandHandler(config, mockPlugins, '/fake/project');
+
+    const context: ExecutionContext = {
+      scope: {
+        type: 'full',
+        baseBranch: 'main',
+        specsToGenerate: ['tests/login.md']
+      },
+      worktrees: {
+        base: '/worktrees/base',
+        current: '/worktrees/current'
+      },
+      serverManager: { cleanup: jest.fn(), startServer: jest.fn() } as any,
+      baseUrl: "http://localhost:34567",
+      currentUrl: "http://localhost:34568",
+      baseResults: new Map(),
+      currentResults: new Map(),
+      runResult: null,
+      keepWorktrees: false
+    };
+
+    await (handler as any).handleExecuteCurrent(context);
+
+    // The testPath should be resolved from worktree path, not projectRoot
+    // If resolved correctly: /worktrees/current/tests/generated/login.spec.ts
+    // If resolved incorrectly: /fake/project/tests/generated/login.spec.ts
+    expect(capturedTestPath).toBe('/worktrees/current/tests/generated/login.spec.ts');
+  });
+
   it('should run tests in current worktree and transition to COMPARE_AND_EVALUATE', async () => {
     const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
     const mockMkdirSync = fs.mkdirSync as jest.MockedFunction<typeof fs.mkdirSync>;
