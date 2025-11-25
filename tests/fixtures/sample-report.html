@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual UAT Report</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .hero {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+      border: 3px solid #ef4444;
+    }
+    .hero-status {
+      font-size: 48px;
+      font-weight: bold;
+      color: #ef4444;
+      margin-bottom: 10px;
+    }
+    .hero-message {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .metadata {
+      display: flex;
+      gap: 20px;
+      margin-top: 10px;
+      color: #666;
+      flex-wrap: wrap;
+    }
+    .summary {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .summary-box {
+      flex: 1;
+      min-width: 150px;
+      padding: 25px 20px;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 3px solid transparent;
+      opacity: 0.9;
+    }
+    .summary-box:hover {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+    .summary-box.active {
+      border-color: #fff;
+      opacity: 1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .summary-box.passed {
+      background: #10b981;
+      color: white;
+    }
+    .summary-box.needs-review {
+      background: #f59e0b;
+      color: white;
+    }
+    .summary-box.failed {
+      background: #ef4444;
+      color: white;
+    }
+    .summary-box.errored {
+      background: #6b7280;
+      color: white;
+    }
+    .summary-box.all {
+      background: #3b82f6;
+      color: white;
+    }
+    .summary-box .count {
+      font-size: 42px;
+      font-weight: bold;
+    }
+    .summary-box .label {
+      font-size: 13px;
+      text-transform: uppercase;
+      margin-top: 8px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .search-bar {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    #search-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    #search-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .empty-state {
+      background: white;
+      padding: 60px 20px;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+    }
+    .empty-state.visible {
+      display: block;
+    }
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    .empty-state-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1f2937;
+      margin-bottom: 10px;
+    }
+    .empty-state-message {
+      font-size: 16px;
+      color: #6b7280;
+    }
+    .tests {
+      margin-top: 20px;
+    }
+    .test-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 4px solid #ccc;
+    }
+    .test-card.passed {
+      border-left-color: #10b981;
+    }
+    .test-card.needs-review {
+      border-left-color: #f59e0b;
+    }
+    .test-card.failed {
+      border-left-color: #ef4444;
+    }
+    .test-card.errored {
+      border-left-color: #6b7280;
+    }
+    .test-card.hidden {
+      display: none;
+    }
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .test-name {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .test-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .test-status.passed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .test-status.needs-review {
+      background: #fed7aa;
+      color: #92400e;
+    }
+    .test-status.failed {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .test-status.errored {
+      background: #e5e7eb;
+      color: #1f2937;
+    }
+    .test-duration {
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .test-body {
+      margin-top: 15px;
+      display: none;
+    }
+    .test-card.expanded .test-body {
+      display: block;
+    }
+    .checkpoint {
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+    .checkpoint-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .checkpoint-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .checkpoint-metrics {
+      display: flex;
+      gap: 15px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .checkpoint-metrics .pass {
+      color: #10b981;
+      font-weight: bold;
+    }
+    .checkpoint-metrics .fail {
+      color: #ef4444;
+      font-weight: bold;
+    }
+    .evaluation {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .image-comparison {
+      margin: 15px 0;
+    }
+    .view-modes {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+    .view-modes button {
+      padding: 8px 16px;
+      border: 2px solid #e5e7eb;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .view-modes button:hover {
+      border-color: #9ca3af;
+    }
+    .view-modes button.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+    .comparison-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      background: #000;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .comparison-container img {
+      width: 100%;
+      display: block;
+    }
+    .current-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .slider {
+      width: 100%;
+      max-width: 800px;
+      display: block;
+      margin: 10px auto;
+      cursor: pointer;
+    }
+    .diff-img {
+      width: 100%;
+      max-width: 800px;
+      display: block;
+      margin: 0 auto;
+      border-radius: 4px;
+    }
+    .side-by-side-container {
+      display: flex;
+      gap: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .side-by-side-image {
+      flex: 1;
+      min-width: 400px;
+      max-width: 800px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .side-by-side-image img {
+      width: 100%;
+      display: block;
+      border-radius: 4px;
+    }
+    .image-label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      padding: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="hero-status">✗ FAILED</div>
+    <div class="hero-message">1 test failed</div>
+  </div>
+
+  <div class="header">
+    <h1>Test Results</h1>
+    <div class="metadata">
+      <div><strong>Branch:</strong> feature/dramatic-change</div>
+      <div><strong>Base:</strong> main</div>
+      <div><strong>Run ID:</strong> f8a3b48</div>
+      <div><strong>Date:</strong> 11/20/2025, 11:31:46 AM</div>
+    </div>
+    <div class="summary">
+      <div class="summary-box all active" data-filter="all">
+        <div class="count">1</div>
+        <div class="label">All Tests</div>
+      </div>
+      <div class="summary-box passed" data-filter="passed">
+        <div class="count">0</div>
+        <div class="label">Passed</div>
+      </div>
+      <div class="summary-box needs-review" data-filter="needs-review">
+        <div class="count">0</div>
+        <div class="label">Needs Review</div>
+      </div>
+      <div class="summary-box failed" data-filter="failed">
+        <div class="count">1</div>
+        <div class="label">Failed</div>
+      </div>
+      <div class="summary-box errored" data-filter="errored">
+        <div class="count">0</div>
+        <div class="label">Errored</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search tests by name...">
+  </div>
+
+  <div class="empty-state" id="empty-state">
+    <div class="empty-state-icon">🔍</div>
+    <div class="empty-state-title">No tests found</div>
+    <div class="empty-state-message">Try adjusting your filters or search</div>
+  </div>
+
+  <div class="tests">
+    
+    <div class="test-card failed expanded" data-status="failed">
+      <div class="test-header">
+        <div>
+          <span class="test-name">home-page</span>
+          <span class="test-duration"> 331ms</span>
+        </div>
+        <span class="test-status failed">failed</span>
+      </div>
+      <div class="test-body">
+    <div class="checkpoint">
+      <div class="checkpoint-header">
+        <h3>feature-cards-visible</h3>
+        <div class="checkpoint-metrics">
+          <span class="fail">✗</span>
+          <span>48.2% diff</span>
+          <span>95% confidence</span>
+        </div>
+      </div>
+
+      <div class="evaluation">
+        <strong>Evaluation:</strong> The visual changes do not align with test intent. The checkpoint &quot;feature-cards-visible&quot; should capture the feature cards in their normal state after scrolling. However, the current state shows significant unintended visual degradation: (1) Header gradient changed from blue-purple to pink-red, (2) Title text color changed to red, (3) Feature card backgrounds changed from light gray to bright yellow/red with altered styling, (4) Overall color scheme is drastically different. A 48.23% pixel difference with these extreme color and styling changes indicates a regression or uncontrolled style mutation rather than a legitimate layout change from scrolling. The test intent was to verify feature cards visibility, not to validate a complete visual redesign.
+      </div>
+
+      
+    <div class="image-comparison">
+      <div class="view-modes">
+        <button onclick="setViewMode(this, 'overlay')" class="active">Overlay</button>
+        <button onclick="setViewMode(this, 'diff')">Diff</button>
+        <button onclick="setViewMode(this, 'side-by-side')">Side by Side</button>
+      </div>
+
+      <div class="comparison-container">
+        <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/base/feature-cards-visible.png" class="baseline-img" alt="Baseline" loading="lazy">
+        <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/current/feature-cards-visible.png" class="current-img" alt="Current" loading="lazy" style="clip-path: inset(0 50% 0 0);">
+      </div>
+      <input type="range" min="0" max="100" value="50" class="slider"
+             onchange="updateSlider(this)" oninput="updateSlider(this)">
+
+      <img src="/private/tmp/visual-uat-demo/.visual-uat/diffs/feature-cards-visible.png" class="diff-img" style="display: none;" alt="Diff" loading="lazy">
+
+      <div class="side-by-side-container" style="display: none;">
+        <div class="side-by-side-image">
+          <div class="image-label">Baseline</div>
+          <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/base/feature-cards-visible.png" alt="Baseline" loading="lazy">
+        </div>
+        <div class="side-by-side-image">
+          <div class="image-label">Current</div>
+          <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/current/feature-cards-visible.png" alt="Current" loading="lazy">
+        </div>
+      </div>
+    </div>
+  
+    </div>
+  
+
+    <div class="checkpoint">
+      <div class="checkpoint-header">
+        <h3>header-loaded</h3>
+        <div class="checkpoint-metrics">
+          <span class="fail">✗</span>
+          <span>48.3% diff</span>
+          <span>95% confidence</span>
+        </div>
+      </div>
+
+      <div class="evaluation">
+        <strong>Evaluation:</strong> The visual changes do NOT match the test intent. The test expects to &quot;verify page loads with gradient header,&quot; but the current screenshot shows significant unintended changes:
+      </div>
+
+      
+    <div class="image-comparison">
+      <div class="view-modes">
+        <button onclick="setViewMode(this, 'overlay')" class="active">Overlay</button>
+        <button onclick="setViewMode(this, 'diff')">Diff</button>
+        <button onclick="setViewMode(this, 'side-by-side')">Side by Side</button>
+      </div>
+
+      <div class="comparison-container">
+        <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/base/header-loaded.png" class="baseline-img" alt="Baseline" loading="lazy">
+        <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/current/header-loaded.png" class="current-img" alt="Current" loading="lazy" style="clip-path: inset(0 50% 0 0);">
+      </div>
+      <input type="range" min="0" max="100" value="50" class="slider"
+             onchange="updateSlider(this)" oninput="updateSlider(this)">
+
+      <img src="/private/tmp/visual-uat-demo/.visual-uat/diffs/header-loaded.png" class="diff-img" style="display: none;" alt="Diff" loading="lazy">
+
+      <div class="side-by-side-container" style="display: none;">
+        <div class="side-by-side-image">
+          <div class="image-label">Baseline</div>
+          <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/base/header-loaded.png" alt="Baseline" loading="lazy">
+        </div>
+        <div class="side-by-side-image">
+          <div class="image-label">Current</div>
+          <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/current/header-loaded.png" alt="Current" loading="lazy">
+        </div>
+      </div>
+    </div>
+  
+    </div>
+  
+
+    <div class="checkpoint">
+      <div class="checkpoint-header">
+        <h3>home-initial</h3>
+        <div class="checkpoint-metrics">
+          <span class="fail">✗</span>
+          <span>29.4% diff</span>
+          <span>95% confidence</span>
+        </div>
+      </div>
+
+      <div class="evaluation">
+        <strong>Evaluation:</strong> The visual changes show a significant and unintended gradient header transformation. The baseline (Image 1) displays a blue-to-purple gradient header, which is the expected state. However, the current version (Image 2) shows a pink-to-red gradient header with a red title, representing a major color scheme deviation. The diff (Image 3) confirms extensive changes across the header region (29.42% pixel difference). While the test intent is to &quot;verify page loads with gradient header,&quot; the actual gradient has fundamentally changed in both color palette and appearance, indicating either a regression or unintended styling modification rather than the expected visual state.
+      </div>
+
+      
+    <div class="image-comparison">
+      <div class="view-modes">
+        <button onclick="setViewMode(this, 'overlay')" class="active">Overlay</button>
+        <button onclick="setViewMode(this, 'diff')">Diff</button>
+        <button onclick="setViewMode(this, 'side-by-side')">Side by Side</button>
+      </div>
+
+      <div class="comparison-container">
+        <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/base/home-initial.png" class="baseline-img" alt="Baseline" loading="lazy">
+        <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/current/home-initial.png" class="current-img" alt="Current" loading="lazy" style="clip-path: inset(0 50% 0 0);">
+      </div>
+      <input type="range" min="0" max="100" value="50" class="slider"
+             onchange="updateSlider(this)" oninput="updateSlider(this)">
+
+      <img src="/private/tmp/visual-uat-demo/.visual-uat/diffs/home-initial.png" class="diff-img" style="display: none;" alt="Diff" loading="lazy">
+
+      <div class="side-by-side-container" style="display: none;">
+        <div class="side-by-side-image">
+          <div class="image-label">Baseline</div>
+          <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/base/home-initial.png" alt="Baseline" loading="lazy">
+        </div>
+        <div class="side-by-side-image">
+          <div class="image-label">Current</div>
+          <img src="/private/tmp/visual-uat-demo/.visual-uat/screenshots/current/home-initial.png" alt="Current" loading="lazy">
+        </div>
+      </div>
+    </div>
+  
+    </div>
+  </div>
+    </div>
+  
+  </div>
+
+  
+  <script>
+    (function() {
+      let currentStatusFilter = 'all';
+      let currentSearchText = '';
+
+      const summaryBoxes = document.querySelectorAll('.summary-box');
+      const searchInput = document.getElementById('search-input');
+      const testCards = document.querySelectorAll('.test-card');
+      const emptyState = document.getElementById('empty-state');
+
+      const emptyStateMessages = {
+        'all': { icon: '🔍', title: 'No tests found', message: 'Try adjusting your search' },
+        'passed': { icon: '😢', title: 'No tests passed!', message: 'Time to fix some bugs!' },
+        'failed': { icon: '🎉', title: 'No tests failed!', message: 'Everything is working great!' },
+        'needs-review': { icon: '✅', title: 'Nothing needs review!', message: 'All tests have clear pass/fail results' },
+        'errored': { icon: '💚', title: 'No tests errored!', message: 'All tests ran successfully' }
+      };
+
+      function applyFilters() {
+        let visibleCount = 0;
+        testCards.forEach(card => {
+          const cardStatus = card.getAttribute('data-status');
+          const cardName = card.querySelector('.test-name').textContent.toLowerCase();
+
+          const matchesStatus = currentStatusFilter === 'all' || cardStatus === currentStatusFilter;
+          const matchesSearch = currentSearchText === '' || cardName.includes(currentSearchText.toLowerCase());
+
+          if (matchesStatus && matchesSearch) {
+            card.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+
+        // Show/hide empty state
+        if (visibleCount === 0) {
+          const message = currentSearchText !== ''
+            ? emptyStateMessages['all']
+            : emptyStateMessages[currentStatusFilter] || emptyStateMessages['all'];
+
+          emptyState.querySelector('.empty-state-icon').textContent = message.icon;
+          emptyState.querySelector('.empty-state-title').textContent = message.title;
+          emptyState.querySelector('.empty-state-message').textContent = message.message;
+          emptyState.classList.add('visible');
+        } else {
+          emptyState.classList.remove('visible');
+        }
+      }
+
+      function setActiveBox(filterValue) {
+        summaryBoxes.forEach(box => {
+          if (box.getAttribute('data-filter') === filterValue) {
+            box.classList.add('active');
+          } else {
+            box.classList.remove('active');
+          }
+        });
+      }
+
+      summaryBoxes.forEach(box => {
+        box.addEventListener('click', function() {
+          currentStatusFilter = this.getAttribute('data-filter');
+          setActiveBox(currentStatusFilter);
+          applyFilters();
+        });
+      });
+
+      searchInput.addEventListener('input', function() {
+        currentSearchText = this.value;
+        applyFilters();
+      });
+
+      // Toggle test card expand/collapse
+      testCards.forEach(card => {
+        const header = card.querySelector('.test-header');
+        if (header) {
+          header.addEventListener('click', function() {
+            card.classList.toggle('expanded');
+          });
+        }
+      });
+
+      // Initial filter application
+      applyFilters();
+    })();
+
+    // Image comparison slider
+    function updateSlider(slider) {
+      const container = slider.previousElementSibling;
+      const currentImg = container.querySelector('.current-img');
+      const value = slider.value;
+      currentImg.style.clipPath = 'inset(0 ' + (100 - value) + '% 0 0)';
+    }
+
+    // View mode switching
+    function setViewMode(btn, mode) {
+      const comparison = btn.closest('.image-comparison');
+      const container = comparison.querySelector('.comparison-container');
+      const slider = comparison.querySelector('.slider');
+      const diffImg = comparison.querySelector('.diff-img');
+      const sideBySide = comparison.querySelector('.side-by-side-container');
+      const buttons = comparison.querySelectorAll('.view-modes button');
+
+      // Update active button
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (mode === 'overlay') {
+        container.style.display = 'block';
+        slider.style.display = 'block';
+        diffImg.style.display = 'none';
+        sideBySide.style.display = 'none';
+      } else if (mode === 'diff') {
+        container.style.display = 'none';
+        slider.style.display = 'none';
+        diffImg.style.display = 'block';
+        sideBySide.style.display = 'none';
+      } else if (mode === 'side-by-side') {
+        container.style.display = 'none';
+        slider.style.display = 'none';
+        diffImg.style.display = 'none';
+        sideBySide.style.display = 'flex';
+      }
+    }
+  </script>
+</body>
+</html>
