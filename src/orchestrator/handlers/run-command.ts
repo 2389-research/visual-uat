@@ -512,7 +512,9 @@ export class RunCommandHandler {
     const context: ExecutionContext = {
       scope: null,
       worktrees: null,
-      serverManager: new ServerManager(),
+      serverManager: new ServerManager({
+        startCommand: this.config.targetRunner?.startCommand
+      }),
       baseUrl: `http://localhost:${basePort}`,
       currentUrl: `http://localhost:${currentPort}`,
       baseResults: new Map<string, RawTestResult>(),

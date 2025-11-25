@@ -4,6 +4,10 @@
 import { spawn, ChildProcess } from 'child_process';
 import * as net from 'net';
 
+export interface ServerManagerConfig {
+  startCommand?: string;
+}
+
 export interface ServerInfo {
   process: ChildProcess;
   port: number;
@@ -12,11 +16,20 @@ export interface ServerInfo {
 
 export class ServerManager {
   private servers: ServerInfo[] = [];
+  private startCommand: string;
+  private startArgs: string[];
+
+  constructor(config: ServerManagerConfig = {}) {
+    const command = config.startCommand || 'npm start';
+    const parts = command.split(/\s+/);
+    this.startCommand = parts[0];
+    this.startArgs = parts.slice(1);
+  }
 
   async startServer(directory: string, port: number): Promise<ServerInfo> {
     console.log(`Starting server in ${directory} on port ${port}...`);
 
-    const serverProcess = spawn('npm', ['start'], {
+    const serverProcess = spawn(this.startCommand, this.startArgs, {
       cwd: directory,
       env: {
         ...process.env,
