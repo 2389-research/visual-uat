@@ -126,7 +126,22 @@ describe('WorktreeManager', () => {
   });
 
   describe('cleanup', () => {
-    it('should remove base worktree only', () => {
+    it('should remove worktree we created', async () => {
+      const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+      // First call: package.json check in createWorktrees (return false to skip npm install)
+      // Second call: existsSync check in cleanup
+      mockExistsSync
+        .mockReturnValueOnce(false)  // No package.json
+        .mockReturnValueOnce(true);   // Worktree exists for cleanup
+
+      mockSpawnSync.mockReturnValue({ status: 0, error: undefined } as any);
+
+      // First create a worktree so createdWorktreePath is set
+      await manager.createWorktrees('main');
+      jest.clearAllMocks();
+
+      // Reset existsSync for cleanup check
+      mockExistsSync.mockReturnValue(true);
       mockSpawnSync.mockReturnValue({ status: 0, error: undefined } as any);
 
       manager.cleanup();
@@ -146,7 +161,19 @@ describe('WorktreeManager', () => {
       );
     });
 
-    it('should force remove if normal removal fails', () => {
+    it('should force remove if normal removal fails', async () => {
+      const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+      mockExistsSync.mockReturnValue(false); // No package.json initially
+
+      mockSpawnSync.mockReturnValue({ status: 0, error: undefined } as any);
+
+      // First create a worktree so createdWorktreePath is set
+      await manager.createWorktrees('main');
+      jest.clearAllMocks();
+
+      // Reset existsSync for cleanup check
+      mockExistsSync.mockReturnValue(true);
+
       mockSpawnSync
         .mockReturnValueOnce({ status: 1, error: undefined } as any) // First remove fails
         .mockReturnValueOnce({ status: 0, error: undefined } as any); // Force remove succeeds
@@ -158,6 +185,61 @@ describe('WorktreeManager', () => {
         ['worktree', 'remove', '--force', '.worktrees/base'],
         expect.any(Object)
       );
+    });
+
+    it('should not remove worktree if we reused an existing one', async () => {
+      const existingPath = '/fake/project/main-working-tree';
+      const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+      mockExistsSync.mockReturnValue(true);
+
+      mockSpawnSync
+        .mockReturnValueOnce({
+          status: 1,
+          stderr: Buffer.from(`fatal: 'main' is already used by worktree at '${existingPath}'`),
+          error: undefined
+        } as any) // git worktree add - fails with "already used"
+        .mockReturnValueOnce({ status: 0, error: undefined } as any); // npm install - succeeds
+
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      await manager.createWorktrees('main');
+      jest.clearAllMocks();
+
+      manager.cleanup();
+
+      // Should NOT call any git commands since we didn't create the worktree
+      expect(mockSpawnSync).not.toHaveBeenCalled();
+
+      consoleLogSpy.mockRestore();
+    });
+
+    it('should not remove worktree if path does not exist', async () => {
+      const mockExistsSync = fs.existsSync as jest.MockedFunction<typeof fs.existsSync>;
+      mockExistsSync.mockReturnValue(false); // No package.json
+
+      mockSpawnSync.mockReturnValue({ status: 0, error: undefined } as any);
+
+      // First create a worktree
+      await manager.createWorktrees('main');
+      jest.clearAllMocks();
+
+      // Worktree path doesn't exist (already cleaned up somehow)
+      mockExistsSync.mockReturnValue(false);
+
+      manager.cleanup();
+
+      // Should NOT call git commands since path doesn't exist
+      expect(mockSpawnSync).not.toHaveBeenCalled();
+    });
+
+    it('should do nothing if cleanup called without creating worktree', () => {
+      mockSpawnSync.mockReturnValue({ status: 0, error: undefined } as any);
+
+      // Call cleanup without first creating a worktree
+      manager.cleanup();
+
+      // Should not call any git commands
+      expect(mockSpawnSync).not.toHaveBeenCalled();
     });
   });
 });

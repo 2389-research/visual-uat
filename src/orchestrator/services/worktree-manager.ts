@@ -11,10 +11,13 @@ export interface WorktreePaths {
 }
 
 export class WorktreeManager {
+  private createdWorktreePath: string | null = null;
+
   constructor(private projectRoot: string) {}
 
   async createWorktrees(baseBranch: string): Promise<WorktreePaths> {
-    let basePath = path.join(this.projectRoot, '.worktrees/base');
+    const worktreePath = path.join(this.projectRoot, '.worktrees/base');
+    let basePath = worktreePath;
 
     // Current branch: use the working directory (already checked out)
     // Only create worktree for base branch
@@ -33,11 +36,15 @@ export class WorktreeManager {
 
       if (alreadyUsedMatch) {
         // The base branch is already checked out somewhere, use that path
+        // Do NOT track this for cleanup - we didn't create it
         basePath = alreadyUsedMatch[1];
         console.log(`Base branch '${baseBranch}' already checked out at ${basePath}, reusing existing checkout`);
       } else {
         throw new Error(`Failed to create base worktree: ${baseResult.error?.message || stderr || 'git command failed'}`);
       }
+    } else {
+      // We successfully created this worktree, track it for cleanup
+      this.createdWorktreePath = worktreePath;
     }
 
     // Install dependencies in base worktree if package.json exists
@@ -61,18 +68,32 @@ export class WorktreeManager {
   }
 
   cleanup(): void {
-    // Only remove base worktree (current uses working directory)
-    const baseResult = spawnSync('git', ['worktree', 'remove', '.worktrees/base'], {
+    // Only remove worktree if we created it
+    if (!this.createdWorktreePath) {
+      return;
+    }
+
+    // Check if the worktree directory still exists
+    if (!fs.existsSync(this.createdWorktreePath)) {
+      this.createdWorktreePath = null;
+      return;
+    }
+
+    // Remove the worktree we created
+    const relativePath = path.relative(this.projectRoot, this.createdWorktreePath);
+    const baseResult = spawnSync('git', ['worktree', 'remove', relativePath], {
       cwd: this.projectRoot,
-      stdio: 'inherit'
+      stdio: 'pipe'
     });
 
     if (baseResult.status !== 0) {
       // Force remove if locked
-      spawnSync('git', ['worktree', 'remove', '--force', '.worktrees/base'], {
+      spawnSync('git', ['worktree', 'remove', '--force', relativePath], {
         cwd: this.projectRoot,
-        stdio: 'inherit'
+        stdio: 'pipe'
       });
     }
+
+    this.createdWorktreePath = null;
   }
 }
