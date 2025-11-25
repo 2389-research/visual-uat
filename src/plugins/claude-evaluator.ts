@@ -124,13 +124,21 @@ ${input.intent}
 - Pixel difference: ${input.diffResult.pixelDiffPercent.toFixed(2)}%
 - Changed regions: ${input.diffResult.changedRegions.length}
 
+**Images Provided:**
+1. **Baseline** - Screenshot from the base branch (before changes)
+2. **Current** - Screenshot from the current branch (after changes)
+3. **Diff visualization** - A computed diff image showing what changed:
+   - **Green/cyan areas** = Content ADDED in current (not present in baseline)
+   - **Magenta/pink areas** = Content REMOVED from baseline (not present in current)
+   - These colors are visualization markers only, NOT actual colors in the UI
+
 **Your Task:**
-Compare the baseline (image 1), current (image 2), and diff (image 3) screenshots. Determine if the visual changes match the test intent.
+Compare the actual UI changes between baseline and current screenshots. Determine if the visual changes match the test intent. Ignore the diff visualization colors - focus on what actually changed in the UI.
 
 Respond in this exact format:
 PASS: true/false
 CONFIDENCE: 0.0-1.0
-REASON: <brief explanation>
+REASON: <brief explanation of whether UI changes align with intent>
 
 Be strict: only pass if changes clearly align with intent.`;
   }
