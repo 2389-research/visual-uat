@@ -242,8 +242,8 @@ module.exports = {
   // Plugin configuration
   plugins: {
     testGenerator: '@visual-uat/stub-generator',
-    targetRunner: '@visual-uat/playwright-runner',
-    differ: '@visual-uat/pixelmatch-differ',
+    targetRunner: '@visual-uat/web-runner',
+    differ: '@visual-uat/smart-differ',
     evaluator: '@visual-uat/claude-evaluator'
   }
 };

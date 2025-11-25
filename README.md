@@ -88,7 +88,7 @@ Visual-uat tests its own HTML report structure to catch visual regressions.
 npm run setup:dogfood
 ```
 
-This runs visual-uat on the demo-app, generating an HTML report at `examples/demo-app/.visual-uat/reports/latest.html`.
+This runs visual-uat on the demo-app, generating an HTML report at `examples/demo-app/.visual-uat/reports/<timestamp>-<runId>.html`.
 
 ### Test Report Structure
 ```bash
@@ -99,3 +99,84 @@ This serves the generated reports and captures screenshots to verify the HTML st
 
 ### Use Case
 When modifying `src/plugins/html-reporter.ts`, run both commands to see visual diffs of your changes.
+
+## Port Configuration
+
+Visual-UAT runs two dev servers simultaneously (base branch and current branch) and automatically finds available ports.
+
+### Automatic Port Detection (Default)
+
+```bash
+visual-uat run --all
+# Output: Using dynamic ports: base=54102, current=54103
+```
+
+Ports are auto-detected using OS port allocation (bind to port 0), ensuring no conflicts with existing processes.
+
+### Manual Port Specification
+
+```bash
+# Specify both ports explicitly
+visual-uat run --base-port 3000 --current-port 3001
+
+# Specify one, auto-detect the other
+visual-uat run --base-port 3000
+```
+
+### Using $PORT in startCommand
+
+The `$PORT` variable is expanded in your `startCommand`:
+
+```javascript
+targetRunner: {
+  startCommand: 'npx serve . -l $PORT'  // $PORT replaced with actual port
+}
+```
+
+The `PORT` environment variable is also set, so servers that read from `process.env.PORT` work automatically.
+
+## LLM Evaluator
+
+Visual-UAT uses Claude to evaluate whether visual changes are intentional or regressions.
+
+### How It Works
+
+1. Screenshots are captured from both branches
+2. Smart diffing identifies visual differences
+3. Claude evaluates the changes against:
+   - **Test intent** (from your spec file)
+   - **Code changes** (git diff between branches)
+   - **Visual diff metrics** (percentage changed, regions affected)
+
+### Git Diff Context
+
+The evaluator receives context about what code changed between branches:
+
+```
+Commits:
+abc123 feat: add real images to cards
+def456 fix: adjust card spacing
+
+Changes: 3 files changed, 45 insertions(+), 12 deletions(-)
+
+Files changed:
+ src/components/Card.tsx | 35 ++++++++++++++++++++++++++++++++---
+ src/styles/cards.css    | 15 +++++++++++----
+ public/images/card1.png | Bin 0 -> 24532 bytes
+```
+
+This helps the evaluator understand *why* visual changes occurred and whether they align with the developer's intent.
+
+### Configuration
+
+```javascript
+// visual-uat.config.js
+module.exports = {
+  evaluator: {
+    autoPassThreshold: 0.95,  // Auto-pass if confidence >= 95%
+    autoFailThreshold: 0.30   // Auto-fail if confidence <= 30%
+  }
+};
+```
+
+Changes between thresholds are flagged as "needs review" for human judgment.
