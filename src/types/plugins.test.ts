@@ -18,7 +18,8 @@ import type {
   BDDSpec,
   BDDScenario,
   BDDStep,
-  Checkpoint
+  Checkpoint,
+  TestRunnerPlugin
 } from './plugins';
 import type { RunResult } from '../orchestrator/types/results';
 
@@ -151,5 +152,26 @@ describe('BDDSpec type', () => {
 
     expect(scenario.steps).toHaveLength(3);
     expect(scenario.checkpoints).toHaveLength(1);
+  });
+});
+
+describe('TestRunnerPlugin interface', () => {
+  it('should define runner plugin contract', () => {
+    // Type-level test - if this compiles, the interface is correct
+    const mockPlugin: TestRunnerPlugin = {
+      name: 'playwright',
+      fileExtension: '.spec.ts',
+      generate: async (spec: BDDSpec) => 'test code',
+      execute: async (testPath: string, context: any) => ({
+        specPath: testPath,
+        generatedPath: testPath,
+        status: 'passed' as const,
+        checkpoints: [],
+        duration: 100
+      })
+    };
+
+    expect(mockPlugin.name).toBe('playwright');
+    expect(mockPlugin.fileExtension).toBe('.spec.ts');
   });
 });

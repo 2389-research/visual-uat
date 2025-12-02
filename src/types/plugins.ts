@@ -1,7 +1,7 @@
 // ABOUTME: Plugin interface definitions for extensible visual UAT system
 // ABOUTME: Defines contracts for target runners, test generators, differs, and evaluators
 
-import { RunResult } from '../orchestrator/types/results';
+import { RunResult, TestResult } from '../orchestrator/types/results';
 
 export interface TargetInfo {
   baseUrl: string;
@@ -127,4 +127,18 @@ export interface BDDSpec {
   generatedAt: string;
   feature: string;
   scenarios: BDDScenario[];
+}
+
+// Test Runner Plugin types
+export interface ExecutionContext {
+  baseUrl: string;
+  screenshotDir: string;
+  environment: Record<string, string>;
+}
+
+export interface TestRunnerPlugin {
+  name: string;
+  fileExtension: string;
+  generate(spec: BDDSpec): Promise<string>;
+  execute(testPath: string, context: ExecutionContext): Promise<TestResult>;
 }
