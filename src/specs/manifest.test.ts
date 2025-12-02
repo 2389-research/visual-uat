@@ -90,3 +90,66 @@ describe('SpecManifest', () => {
     expect(changes2.modified).toHaveLength(0);
   });
 });
+
+describe('StoryManifest', () => {
+  const testDir = path.join(__dirname, '../../test-fixtures/story-manifest-test');
+
+  beforeEach(() => {
+    if (fs.existsSync(testDir)) {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(testDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    if (fs.existsSync(testDir)) {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  describe('trackStory', () => {
+    it('should track story hash and generated spec path', () => {
+      const manifest = new SpecManifest(testDir);
+
+      manifest.trackStory('tests/stories/cart.story.md', {
+        contentHash: 'abc123',
+        specPath: '.visual-uat/specs/cart.spec.md',
+        specHash: 'def456'
+      });
+
+      const entry = manifest.getStoryEntry('tests/stories/cart.story.md');
+      expect(entry?.contentHash).toBe('abc123');
+      expect(entry?.specPath).toBe('.visual-uat/specs/cart.spec.md');
+      expect(entry?.specHash).toBe('def456');
+    });
+  });
+
+  describe('detectStoryChanges', () => {
+    it('should detect new stories', () => {
+      const manifest = new SpecManifest(testDir);
+
+      const changes = manifest.detectStoryChanges([
+        { path: 'tests/stories/new.story.md', contentHash: 'xyz789' }
+      ]);
+
+      expect(changes.new).toContain('tests/stories/new.story.md');
+    });
+
+    it('should detect modified stories', () => {
+      const manifest = new SpecManifest(testDir);
+      manifest.trackStory('tests/stories/cart.story.md', {
+        contentHash: 'old-hash',
+        specPath: '.visual-uat/specs/cart.spec.md',
+        specHash: 'spec-hash'
+      });
+      manifest.save();
+
+      const manifest2 = new SpecManifest(testDir);
+      const changes = manifest2.detectStoryChanges([
+        { path: 'tests/stories/cart.story.md', contentHash: 'new-hash' }
+      ]);
+
+      expect(changes.modified).toContain('tests/stories/cart.story.md');
+    });
+  });
+});
