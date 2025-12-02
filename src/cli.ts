@@ -64,14 +64,22 @@ export function createCLI(): Command {
             force: options.force
           });
 
-          const result = await pipeline.run();
+          console.log('Checking stories...');
 
-          console.log(`\nGeneration complete:`);
-          console.log(`  Generated: ${result.generated}`);
-          console.log(`  Skipped: ${result.skipped} (unchanged)`);
+          const result = await pipeline.run({
+            onProgress: (storyPath: string, status: 'skipped' | 'generating') => {
+              const icon = status === 'skipped' ? '✓' : '↻';
+              const message = status === 'skipped' ? '(unchanged, skipping)' : '(changed, regenerating)';
+              const fileName = path.basename(storyPath);
+              console.log(`  ${icon} ${fileName} ${message}`);
+            }
+          });
+
+          console.log(`\nGenerated: ${result.generated} spec${result.generated === 1 ? '' : 's'}, ${result.generated} test${result.generated === 1 ? '' : 's'}`);
+          console.log(`Skipped: ${result.skipped} (unchanged)`);
           if (result.errors.length > 0) {
-            console.log(`  Errors: ${result.errors.length}`);
-            result.errors.forEach(e => console.log(`    - ${e.story}: ${e.error}`));
+            console.log(`Errors: ${result.errors.length}`);
+            result.errors.forEach(e => console.log(`  - ${e.story}: ${e.error}`));
             process.exit(1);
           }
           process.exit(0);

@@ -16,6 +16,10 @@ export interface GenerateOptions {
   force?: boolean;
 }
 
+export interface RunOptions {
+  onProgress?: (storyPath: string, status: 'skipped' | 'generating') => void;
+}
+
 export interface GenerateResult {
   generated: number;
   skipped: number;
@@ -48,7 +52,7 @@ export class GeneratePipeline {
     this.runner = new PlaywrightRunner();
   }
 
-  async run(): Promise<GenerateResult> {
+  async run(runOptions?: RunOptions): Promise<GenerateResult> {
     const result: GenerateResult = { generated: 0, skipped: 0, errors: [] };
 
     const stories = this.storyLoader.loadStories();
@@ -65,10 +69,12 @@ export class GeneratePipeline {
     for (const story of stories) {
       if (!toGenerate.includes(story)) {
         result.skipped++;
+        runOptions?.onProgress?.(story.path, 'skipped');
         continue;
       }
 
       try {
+        runOptions?.onProgress?.(story.path, 'generating');
         await this.processStory(story);
         result.generated++;
       } catch (error) {
