@@ -35,8 +35,10 @@ export interface ReporterConfig {
 
 export interface Config {
   baseBranch: string;
-  specsDir: string;
+  specsDir: string;          // Legacy: direct specs
+  storiesDir?: string;       // New: natural language stories
   generatedDir: string;
+  runner?: string;           // New: 'playwright' | 'tui' | 'swift' etc.
   plugins: PluginConfig;
   targetRunner: TargetRunnerConfig;
   evaluator: EvaluatorConfig;

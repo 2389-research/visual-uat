@@ -122,3 +122,24 @@ describe('CLI run command reporter flags', () => {
     expect(optionFlags).toContain('--open, -o');
   });
 });
+
+describe('CLI generate command with story pipeline', () => {
+  it('should have --force flag for regenerating all tests', () => {
+    const program = createCLI();
+    const generateCommand = program.commands.find(cmd => cmd.name() === 'generate');
+
+    expect(generateCommand).toBeDefined();
+    const options = generateCommand?.options || [];
+    const optionFlags = options.map((opt: any) => opt.flags);
+
+    expect(optionFlags).toContain('--force');
+  });
+
+  it('should update description to mention stories', () => {
+    const program = createCLI();
+    const generateCommand = program.commands.find(cmd => cmd.name() === 'generate');
+
+    expect(generateCommand).toBeDefined();
+    expect(generateCommand?.description()).toContain('stories');
+  });
+});

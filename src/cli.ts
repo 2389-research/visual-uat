@@ -48,11 +48,36 @@ export function createCLI(): Command {
 
   program
     .command('generate')
-    .description('Generate test scripts from specifications')
-    .action(async () => {
+    .description('Generate test scripts from stories or specifications')
+    .option('--force', 'Regenerate all tests (ignore cache)')
+    .action(async (options) => {
       try {
         const projectRoot = process.cwd();
         const config = await loadConfig(projectRoot);
+
+        // Use new pipeline if storiesDir is configured
+        if (config.storiesDir) {
+          const { GeneratePipeline } = await import('./pipeline/generate-pipeline');
+          const pipeline = new GeneratePipeline(projectRoot, {
+            storiesDir: config.storiesDir,
+            runner: config.runner || 'playwright',
+            force: options.force
+          });
+
+          const result = await pipeline.run();
+
+          console.log(`\nGeneration complete:`);
+          console.log(`  Generated: ${result.generated}`);
+          console.log(`  Skipped: ${result.skipped} (unchanged)`);
+          if (result.errors.length > 0) {
+            console.log(`  Errors: ${result.errors.length}`);
+            result.errors.forEach(e => console.log(`    - ${e.story}: ${e.error}`));
+            process.exit(1);
+          }
+          process.exit(0);
+        }
+
+        // Legacy path: use old handler
         const registry = new PluginRegistry(config);
         const plugins = registry.loadAll();
 
