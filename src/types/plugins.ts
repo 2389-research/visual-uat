@@ -90,3 +90,41 @@ export interface ReporterOptions {
 export interface ReporterPlugin {
   generate(result: RunResult, options: ReporterOptions): Promise<void>;
 }
+
+// Story types (natural language input)
+export interface Story {
+  path: string;
+  content: string;
+  title: string;
+  contentHash: string;
+}
+
+// BDD types (generated intermediate)
+export type BDDStepType = 'given' | 'when' | 'then' | 'and' | 'but';
+
+export interface BDDStep {
+  type: BDDStepType;
+  text: string;
+}
+
+export interface Checkpoint {
+  name: string;
+  capture: 'full-page' | 'viewport' | 'element';
+  focus?: string[];
+  selector?: string;
+}
+
+export interface BDDScenario {
+  name: string;
+  steps: BDDStep[];
+  checkpoints: Checkpoint[];
+}
+
+export interface BDDSpec {
+  path: string;
+  sourceStory: string;
+  storyHash: string;
+  generatedAt: string;
+  feature: string;
+  scenarios: BDDScenario[];
+}
