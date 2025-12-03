@@ -2,7 +2,7 @@
 // ABOUTME: Uses LLM to translate BDD specs to executable Playwright code
 
 import Anthropic from '@anthropic-ai/sdk';
-import { BDDSpec, TestRunnerPlugin, ExecutionContext } from '../types/plugins';
+import { BDDSpec, TestRunnerPlugin, TestExecutionContext } from '../types/plugins';
 import { TestResult } from '../orchestrator/types/results';
 import { spawnSync } from 'child_process';
 
@@ -34,7 +34,7 @@ export class PlaywrightRunner implements TestRunnerPlugin {
     return this.addFileHeader(content.text, spec);
   }
 
-  async execute(testPath: string, context: ExecutionContext): Promise<TestResult> {
+  async execute(testPath: string, context: TestExecutionContext): Promise<TestResult> {
     const result = spawnSync('npx', ['playwright', 'test', testPath, '--reporter=json'], {
       encoding: 'utf-8',
       env: {

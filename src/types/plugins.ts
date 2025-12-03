@@ -130,7 +130,7 @@ export interface BDDSpec {
 }
 
 // Test Runner Plugin types
-export interface ExecutionContext {
+export interface TestExecutionContext {
   baseUrl: string;
   screenshotDir: string;
   environment: Record<string, string>;
@@ -140,5 +140,5 @@ export interface TestRunnerPlugin {
   name: string;
   fileExtension: string;
   generate(spec: BDDSpec): Promise<string>;
-  execute(testPath: string, context: ExecutionContext): Promise<TestResult>;
+  execute(testPath: string, context: TestExecutionContext): Promise<TestResult>;
 }

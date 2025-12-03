@@ -100,9 +100,14 @@ export class BDDParser {
           focus = undefined;
         }
       }
+      const captureValue = captureMatch?.[1];
+      const validCapture: 'full-page' | 'viewport' | 'element' =
+        (captureValue === 'full-page' || captureValue === 'viewport' || captureValue === 'element')
+          ? captureValue
+          : 'full-page';
       checkpoints.push({
         name,
-        capture: (captureMatch?.[1] as 'full-page' | 'viewport' | 'element') || 'full-page',
+        capture: validCapture,
         focus,
         selector: selectorMatch?.[1]?.trim()
       });

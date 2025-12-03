@@ -3,6 +3,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { StoryLoader } from '../stories/loader';
 import { StoryToBDDTranslator } from '../translators/story-to-bdd';
 import { BDDWriter } from '../translators/bdd-writer';
@@ -129,7 +130,6 @@ export class GeneratePipeline {
   }
 
   private computeHash(content: string): string {
-    const crypto = require('crypto');
     return crypto.createHash('sha256').update(content).digest('hex');
   }
 }
