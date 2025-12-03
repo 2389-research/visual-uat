@@ -31,8 +31,9 @@ export class QuadtreeDiffer implements Differ {
     // Extract changed regions from tree
     const changedRegions = this.extractChangedRegions(tree);
 
-    // Calculate pixel diff percentage
-    const totalPixels = baselinePng.width * baselinePng.height;
+    // Calculate pixel diff percentage using quadtree canvas size to prevent >100%
+    const totalPixels = Math.max(baselinePng.width, currentPng.width) *
+                        Math.max(baselinePng.height, currentPng.height);
     let changedPixels = 0;
     for (const region of changedRegions) {
       changedPixels += region.width * region.height;
