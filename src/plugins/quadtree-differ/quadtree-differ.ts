@@ -104,18 +104,27 @@ export class QuadtreeDiffer implements Differ {
     let matching = 0;
     let total = 0;
 
-    for (let py = y; py < y + height && py < baseline.height && py < current.height; py++) {
-      for (let px = x; px < x + width && px < baseline.width && px < current.width; px++) {
-        const idx1 = (py * baseline.width + px) << 2;
-        const idx2 = (py * current.width + px) << 2;
+    const maxY = y + height;
+    const maxX = x + width;
 
-        const rDiff = Math.abs(baseline.data[idx1] - current.data[idx2]);
-        const gDiff = Math.abs(baseline.data[idx1 + 1] - current.data[idx2 + 1]);
-        const bDiff = Math.abs(baseline.data[idx1 + 2] - current.data[idx2 + 2]);
+    for (let py = y; py < maxY; py++) {
+      for (let px = x; px < maxX; px++) {
+        const inBaseline = px < baseline.width && py < baseline.height;
+        const inCurrent = px < current.width && py < current.height;
 
-        if ((rDiff + gDiff + bDiff) / 3 < 25) {
-          matching++;
+        if (inBaseline && inCurrent) {
+          const idx1 = (py * baseline.width + px) << 2;
+          const idx2 = (py * current.width + px) << 2;
+
+          const rDiff = Math.abs(baseline.data[idx1] - current.data[idx2]);
+          const gDiff = Math.abs(baseline.data[idx1 + 1] - current.data[idx2 + 1]);
+          const bDiff = Math.abs(baseline.data[idx1 + 2] - current.data[idx2 + 2]);
+
+          if ((rDiff + gDiff + bDiff) / 3 < 25) {
+            matching++;
+          }
         }
+        // Pixels outside either image are treated as mismatches (not incrementing matching)
         total++;
       }
     }
