@@ -152,6 +152,62 @@ describe('AdaptiveAligner', () => {
   });
 
   describe('column pass integration', () => {
+    it('should narrow down matched regions with low similarity (fallback regions)', async () => {
+      // When row alignment fails to find a match, it creates "matched" regions with
+      // similarity 0.5 that span full width. These should also be narrowed by column pass.
+      //
+      // Test case: middle column differs significantly (triggers search failure)
+      // Result without fix: full-width matched regions with similarity 0.5
+      // Result with fix: narrowed regions focused on the changed column
+      const baseline = new PNG({ width: 300, height: 30 });
+      const current = new PNG({ width: 300, height: 30 });
+
+      // Fill both with white
+      for (let i = 0; i < baseline.data.length; i += 4) {
+        baseline.data[i] = 255;
+        baseline.data[i + 1] = 255;
+        baseline.data[i + 2] = 255;
+        baseline.data[i + 3] = 255;
+        current.data[i] = 255;
+        current.data[i + 1] = 255;
+        current.data[i + 2] = 255;
+        current.data[i + 3] = 255;
+      }
+
+      // Make middle column (100-200) completely different - simulates image change
+      for (let y = 0; y < 30; y++) {
+        for (let x = 100; x < 200; x++) {
+          const idx = (y * 300 + x) << 2;
+          current.data[idx] = 0;       // Black instead of white
+          current.data[idx + 1] = 0;
+          current.data[idx + 2] = 0;
+        }
+      }
+
+      // Use high fallback threshold to force creation of "matched" regions with similarity 0.5
+      const alignerWithColumnPass = new AdaptiveAligner({
+        ...DEFAULT_CONFIG,
+        enableColumnPass: true,
+        fallbackThreshold: 100 // Won't trigger full fallback
+      });
+      const result = await alignerWithColumnPass.align(baseline, current);
+
+      expect(result.fallbackTriggered).toBe(false);
+      expect(result.regions.length).toBeGreaterThan(0);
+
+      // Find matched regions with similarity < 1.0 (the 0.5 fallback regions)
+      const lowSimilarityRegions = result.regions.filter(
+        r => r.type === 'matched' && r.similarity !== null && r.similarity < 1.0 && r.current
+      );
+
+      // We should have some low-similarity matched regions
+      expect(lowSimilarityRegions.length).toBeGreaterThan(0);
+
+      // KEY ASSERTION: These regions should be narrowed, not full-width
+      const hasNarrowedRegion = lowSimilarityRegions.some(r => r.current!.width < 300);
+      expect(hasNarrowedRegion).toBe(true);
+    });
+
     it('should narrow down changed regions using column pass', async () => {
       // Create 300x200 images where middle column (100-200) has extra content
       const baseline = new PNG({ width: 300, height: 200 });
