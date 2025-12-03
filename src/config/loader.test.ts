@@ -61,6 +61,18 @@ module.exports = {
     expect(config.evaluator.autoFailThreshold).toBe(0.3);
   });
 
+  it('should default storiesDir to ./tests/stories when not specified', async () => {
+    const config = await loadConfig(fixtureDir);
+    // storiesDir should always be set, defaulting to ./tests/stories
+    expect(config.storiesDir).toBe('./tests/stories');
+  });
+
+  it('should default runner to playwright when not specified', async () => {
+    const config = await loadConfig(fixtureDir);
+    // runner should always be set, defaulting to playwright
+    expect(config.runner).toBe('playwright');
+  });
+
   it('should throw error if config file not found', async () => {
     await expect(loadConfig('/nonexistent')).rejects.toThrow();
   });

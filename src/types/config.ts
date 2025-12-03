@@ -35,8 +35,10 @@ export interface ReporterConfig {
 
 export interface Config {
   baseBranch: string;
-  specsDir: string;
+  specsDir: string;          // Legacy: direct specs
+  storiesDir?: string;       // New: natural language stories
   generatedDir: string;
+  runner?: string;           // New: 'playwright' | 'tui' | 'swift' etc.
   plugins: PluginConfig;
   targetRunner: TargetRunnerConfig;
   evaluator: EvaluatorConfig;
@@ -46,7 +48,9 @@ export interface Config {
 export const DEFAULT_CONFIG: Partial<Config> = {
   baseBranch: 'main',
   specsDir: './tests',
+  storiesDir: './tests/stories',
   generatedDir: './tests/generated',
+  runner: 'playwright',
   evaluator: {
     autoPassThreshold: 0.95,
     autoFailThreshold: 0.3

@@ -34,7 +34,6 @@ import { version } from './index';
 import { loadConfig } from './config/loader';
 import { PluginRegistry } from './orchestrator/services/plugin-registry';
 import { ResultStore } from './orchestrator/services/result-store';
-import { GenerateCommandHandler } from './orchestrator/handlers/generate-command';
 import { RunCommandHandler } from './orchestrator/handlers/run-command';
 import { ReportCommandHandler } from './orchestrator/handlers/report-command';
 
@@ -48,17 +47,39 @@ export function createCLI(): Command {
 
   program
     .command('generate')
-    .description('Generate test scripts from specifications')
-    .action(async () => {
+    .description('Generate test scripts from stories or specifications')
+    .option('--force', 'Regenerate all tests (ignore cache)')
+    .action(async (options) => {
       try {
         const projectRoot = process.cwd();
         const config = await loadConfig(projectRoot);
-        const registry = new PluginRegistry(config);
-        const plugins = registry.loadAll();
 
-        const handler = new GenerateCommandHandler(config, projectRoot);
-        const exitCode = await handler.execute(plugins.testGenerator);
-        process.exit(exitCode);
+        const { GeneratePipeline } = await import('./pipeline/generate-pipeline');
+        const pipeline = new GeneratePipeline(projectRoot, {
+          storiesDir: config.storiesDir || './tests/stories',
+          runner: config.runner || 'playwright',
+          force: options.force
+        });
+
+        console.log('Checking stories...');
+
+        const result = await pipeline.run({
+          onProgress: (storyPath: string, status: 'skipped' | 'generating') => {
+            const icon = status === 'skipped' ? '✓' : '↻';
+            const message = status === 'skipped' ? '(unchanged, skipping)' : '(changed, regenerating)';
+            const fileName = path.basename(storyPath);
+            console.log(`  ${icon} ${fileName} ${message}`);
+          }
+        });
+
+        console.log(`\nGenerated: ${result.generated} spec${result.generated === 1 ? '' : 's'}, ${result.generated} test${result.generated === 1 ? '' : 's'}`);
+        console.log(`Skipped: ${result.skipped} (unchanged)`);
+        if (result.errors.length > 0) {
+          console.log(`Errors: ${result.errors.length}`);
+          result.errors.forEach(e => console.log(`  - ${e.story}: ${e.error}`));
+          process.exit(1);
+        }
+        process.exit(0);
       } catch (error) {
         console.error('Error:', error instanceof Error ? error.message : error);
         process.exit(2);

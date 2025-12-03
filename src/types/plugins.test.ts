@@ -13,7 +13,13 @@ import type {
   EvaluationInput,
   EvaluationResult,
   ReporterPlugin,
-  ReporterOptions
+  ReporterOptions,
+  Story,
+  BDDSpec,
+  BDDScenario,
+  BDDStep,
+  Checkpoint,
+  TestRunnerPlugin
 } from './plugins';
 import type { RunResult } from '../orchestrator/types/results';
 
@@ -98,5 +104,74 @@ describe('Plugin Interfaces', () => {
         expect(options.verbosity).toBe(level);
       });
     });
+  });
+});
+
+describe('Story type', () => {
+  it('should have required fields', () => {
+    const story: Story = {
+      path: 'tests/stories/shopping-cart.story.md',
+      content: '# Shopping Cart\n\nAs a customer...',
+      title: 'Shopping Cart',
+      contentHash: 'abc123'
+    };
+
+    expect(story.path).toBe('tests/stories/shopping-cart.story.md');
+    expect(story.title).toBe('Shopping Cart');
+    expect(story.contentHash).toBe('abc123');
+  });
+});
+
+describe('BDDSpec type', () => {
+  it('should have required fields', () => {
+    const spec: BDDSpec = {
+      path: '.visual-uat/specs/shopping-cart.spec.md',
+      sourceStory: 'tests/stories/shopping-cart.story.md',
+      storyHash: 'abc123',
+      generatedAt: '2024-12-02T10:30:00Z',
+      feature: 'Shopping Cart',
+      scenarios: []
+    };
+
+    expect(spec.sourceStory).toBe('tests/stories/shopping-cart.story.md');
+    expect(spec.storyHash).toBe('abc123');
+  });
+
+  it('should support scenarios with steps and checkpoints', () => {
+    const scenario: BDDScenario = {
+      name: 'Add item to cart',
+      steps: [
+        { type: 'given', text: 'I am on the "/products" page' },
+        { type: 'when', text: 'I click the "Add to Cart" button' },
+        { type: 'then', text: 'I should see the cart badge show "1"' }
+      ],
+      checkpoints: [
+        { name: 'cart-updated', capture: 'full-page', focus: ['.cart-badge'] }
+      ]
+    };
+
+    expect(scenario.steps).toHaveLength(3);
+    expect(scenario.checkpoints).toHaveLength(1);
+  });
+});
+
+describe('TestRunnerPlugin interface', () => {
+  it('should define runner plugin contract', () => {
+    // Type-level test - if this compiles, the interface is correct
+    const mockPlugin: TestRunnerPlugin = {
+      name: 'playwright',
+      fileExtension: '.spec.ts',
+      generate: async (spec: BDDSpec) => 'test code',
+      execute: async (testPath: string, context: any) => ({
+        specPath: testPath,
+        generatedPath: testPath,
+        status: 'passed' as const,
+        checkpoints: [],
+        duration: 100
+      })
+    };
+
+    expect(mockPlugin.name).toBe('playwright');
+    expect(mockPlugin.fileExtension).toBe('.spec.ts');
   });
 });

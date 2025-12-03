@@ -1,7 +1,7 @@
 // ABOUTME: Plugin interface definitions for extensible visual UAT system
 // ABOUTME: Defines contracts for target runners, test generators, differs, and evaluators
 
-import { RunResult } from '../orchestrator/types/results';
+import { RunResult, TestResult } from '../orchestrator/types/results';
 
 export interface TargetInfo {
   baseUrl: string;
@@ -89,4 +89,56 @@ export interface ReporterOptions {
 
 export interface ReporterPlugin {
   generate(result: RunResult, options: ReporterOptions): Promise<void>;
+}
+
+// Story types (natural language input)
+export interface Story {
+  path: string;
+  content: string;
+  title: string;
+  contentHash: string;
+}
+
+// BDD types (generated intermediate)
+export type BDDStepType = 'given' | 'when' | 'then' | 'and' | 'but';
+
+export interface BDDStep {
+  type: BDDStepType;
+  text: string;
+}
+
+export interface Checkpoint {
+  name: string;
+  capture: 'full-page' | 'viewport' | 'element';
+  focus?: string[];
+  selector?: string;
+}
+
+export interface BDDScenario {
+  name: string;
+  steps: BDDStep[];
+  checkpoints: Checkpoint[];
+}
+
+export interface BDDSpec {
+  path: string;
+  sourceStory: string;
+  storyHash: string;
+  generatedAt: string;
+  feature: string;
+  scenarios: BDDScenario[];
+}
+
+// Test Runner Plugin types
+export interface TestExecutionContext {
+  baseUrl: string;
+  screenshotDir: string;
+  environment: Record<string, string>;
+}
+
+export interface TestRunnerPlugin {
+  name: string;
+  fileExtension: string;
+  generate(spec: BDDSpec): Promise<string>;
+  execute(testPath: string, context: TestExecutionContext): Promise<TestResult>;
 }

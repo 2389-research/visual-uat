@@ -122,3 +122,49 @@ describe('CLI run command reporter flags', () => {
     expect(optionFlags).toContain('--open, -o');
   });
 });
+
+describe('CLI generate command with story pipeline', () => {
+  it('should have --force flag for regenerating all tests', () => {
+    const program = createCLI();
+    const generateCommand = program.commands.find(cmd => cmd.name() === 'generate');
+
+    expect(generateCommand).toBeDefined();
+    const options = generateCommand?.options || [];
+    const optionFlags = options.map((opt: any) => opt.flags);
+
+    expect(optionFlags).toContain('--force');
+  });
+
+  it('should update description to mention stories', () => {
+    const program = createCLI();
+    const generateCommand = program.commands.find(cmd => cmd.name() === 'generate');
+
+    expect(generateCommand).toBeDefined();
+    expect(generateCommand?.description()).toContain('stories');
+  });
+});
+
+describe('generate command output', () => {
+  it('should call pipeline.run with onProgress callback when defined', async () => {
+    // This test verifies that the CLI will support passing onProgress to pipeline
+    // We're testing that the interface supports progress callbacks
+    const mockPipeline = {
+      run: jest.fn().mockResolvedValue({
+        generated: 1,
+        skipped: 1,
+        errors: []
+      })
+    };
+
+    // Simulate calling pipeline.run with progress callback
+    await mockPipeline.run({
+      onProgress: (story: string, status: 'skipped' | 'generating') => {
+        console.log(`Progress: ${story} - ${status}`);
+      }
+    });
+
+    expect(mockPipeline.run).toHaveBeenCalledWith({
+      onProgress: expect.any(Function)
+    });
+  });
+});

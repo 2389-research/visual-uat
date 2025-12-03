@@ -10,3 +10,4 @@ test-results/
 # Demo app generated artifacts
 examples/demo-app/.visual-uat/
 examples/demo-app/test-results/
+coverage/
