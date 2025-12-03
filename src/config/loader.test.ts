@@ -78,7 +78,7 @@ module.exports = {
   });
 
   describe('Config Validation', () => {
-    it('should throw error if plugins are missing', async () => {
+    it('should use default plugins if not specified', async () => {
       const testDir = path.join(__dirname, '../../test-fixtures-no-plugins');
       if (fs.existsSync(testDir)) {
         fs.rmSync(testDir, { recursive: true, force: true });
@@ -94,13 +94,15 @@ module.exports = {
       `;
       fs.writeFileSync(path.join(testDir, 'visual-uat.config.js'), configWithoutPlugins);
 
-      await expect(loadConfig(testDir)).rejects.toThrow('plugin');
+      const config = await loadConfig(testDir);
+      expect(config.plugins.differ).toBe('@visual-uat/quadtree-differ');
+      expect(config.plugins.evaluator).toBe('@visual-uat/claude-evaluator');
 
       // Cleanup
       fs.rmSync(testDir, { recursive: true, force: true });
     });
 
-    it('should throw error if required plugin types are missing', async () => {
+    it('should merge user plugins with defaults', async () => {
       const testDir = path.join(__dirname, '../../test-fixtures-incomplete-plugins');
       if (fs.existsSync(testDir)) {
         fs.rmSync(testDir, { recursive: true, force: true });
@@ -114,13 +116,15 @@ module.exports = {
   generatedDir: './tests/generated',
   plugins: {
     targetRunner: '@test/runner'
-    // Missing testGenerator, differ, evaluator
+    // Missing testGenerator, differ, evaluator - will use defaults
   }
 };
       `;
       fs.writeFileSync(path.join(testDir, 'visual-uat.config.js'), configWithIncompletePlugins);
 
-      await expect(loadConfig(testDir)).rejects.toThrow('plugin');
+      const config = await loadConfig(testDir);
+      expect(config.plugins.targetRunner).toBe('@test/runner');
+      expect(config.plugins.differ).toBe('@visual-uat/quadtree-differ');
 
       // Cleanup
       fs.rmSync(testDir, { recursive: true, force: true });

@@ -51,6 +51,12 @@ export const DEFAULT_CONFIG: Partial<Config> = {
   storiesDir: './tests/stories',
   generatedDir: './tests/generated',
   runner: 'playwright',
+  plugins: {
+    targetRunner: '@visual-uat/web-runner',
+    testGenerator: '@visual-uat/stub-generator',
+    differ: '@visual-uat/quadtree-differ',
+    evaluator: '@visual-uat/claude-evaluator'
+  },
   evaluator: {
     autoPassThreshold: 0.95,
     autoFailThreshold: 0.3
