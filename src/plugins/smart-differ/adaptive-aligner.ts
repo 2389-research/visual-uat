@@ -337,6 +337,57 @@ export class AdaptiveAligner {
         } else {
           refined.push(region);
         }
+      } else if (region.type === 'matched' && region.similarity !== null && region.similarity < 1.0 && region.current && region.baseline) {
+        // Run column pass to narrow down matched regions with partial differences
+        // These are regions where rows aligned but have some pixel differences
+        const colResult = await this.columnAligner.alignColumns(
+          baseline,
+          current,
+          { startRow: region.current.y, endRow: region.current.y + region.current.height }
+        );
+
+        if (colResult.changedColumns.length > 0 && colResult.unchangedColumns.length > 0) {
+          // Split into narrower matched regions for changed columns
+          for (const col of colResult.changedColumns) {
+            refined.push({
+              type: 'matched',
+              baseline: {
+                x: col.startX,
+                y: region.baseline.y,
+                width: col.endX - col.startX,
+                height: region.baseline.height
+              },
+              current: {
+                x: col.startX,
+                y: region.current.y,
+                width: col.endX - col.startX,
+                height: region.current.height
+              },
+              similarity: col.similarity
+            });
+          }
+          // Also add unchanged columns as matched with high similarity
+          for (const col of colResult.unchangedColumns) {
+            refined.push({
+              type: 'matched',
+              baseline: {
+                x: col.startX,
+                y: region.baseline.y,
+                width: col.endX - col.startX,
+                height: region.baseline.height
+              },
+              current: {
+                x: col.startX,
+                y: region.current.y,
+                width: col.endX - col.startX,
+                height: region.current.height
+              },
+              similarity: col.similarity
+            });
+          }
+        } else {
+          refined.push(region);
+        }
       } else {
         refined.push(region);
       }
