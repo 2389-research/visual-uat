@@ -95,7 +95,10 @@ export class BDDParser {
       let focus: string[] | undefined;
       if (focusMatch) {
         try {
-          focus = JSON.parse(focusMatch[1]);
+          const parsed = JSON.parse(focusMatch[1]);
+          if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) {
+            focus = parsed;
+          }
         } catch {
           focus = undefined;
         }

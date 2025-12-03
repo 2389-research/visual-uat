@@ -17,14 +17,23 @@ export class PlaywrightRunner implements TestRunnerPlugin {
   }
 
   async generate(spec: BDDSpec): Promise<string> {
-    const response = await this.client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      messages: [{
-        role: 'user',
-        content: this.buildPrompt(spec)
-      }]
-    });
+    let response;
+    try {
+      response = await this.client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        messages: [{
+          role: 'user',
+          content: this.buildPrompt(spec)
+        }]
+      });
+    } catch (error) {
+      throw new Error(`LLM API call failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    if (!response.content || response.content.length === 0) {
+      throw new Error('LLM returned empty response');
+    }
 
     const content = response.content[0];
     if (content.type !== 'text') {
