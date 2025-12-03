@@ -92,10 +92,18 @@ export class BDDParser {
       const focusMatch = details.match(/- focus:\s*(\[.+\])/);
       const selectorMatch = details.match(/- selector:\s*(.+)/);
 
+      let focus: string[] | undefined;
+      if (focusMatch) {
+        try {
+          focus = JSON.parse(focusMatch[1]);
+        } catch {
+          focus = undefined;
+        }
+      }
       checkpoints.push({
         name,
         capture: (captureMatch?.[1] as 'full-page' | 'viewport' | 'element') || 'full-page',
-        focus: focusMatch ? JSON.parse(focusMatch[1]) : undefined,
+        focus,
         selector: selectorMatch?.[1]?.trim()
       });
     }

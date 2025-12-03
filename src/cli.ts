@@ -56,7 +56,7 @@ export function createCLI(): Command {
 
         const { GeneratePipeline } = await import('./pipeline/generate-pipeline');
         const pipeline = new GeneratePipeline(projectRoot, {
-          storiesDir: config.storiesDir!,
+          storiesDir: config.storiesDir || './tests/stories',
           runner: config.runner || 'playwright',
           force: options.force
         });

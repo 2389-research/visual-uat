@@ -26,7 +26,16 @@ export class StoryToBDDTranslator {
       throw new Error('Unexpected response type from LLM');
     }
 
-    const parsed = JSON.parse(content.text);
+    let parsed;
+    try {
+      parsed = JSON.parse(content.text);
+    } catch (error) {
+      throw new Error(`Failed to parse LLM response as JSON: ${content.text.substring(0, 200)}`);
+    }
+
+    if (!parsed.feature || !Array.isArray(parsed.scenarios)) {
+      throw new Error('LLM response missing required fields: feature or scenarios');
+    }
 
     return {
       path: this.generateSpecPath(story.path),
@@ -73,7 +82,7 @@ Rules:
   }
 
   private generateSpecPath(storyPath: string): string {
-    const basename = storyPath.replace(/.*\//, '').replace('.story.md', '.spec.md');
+    const basename = storyPath.replace(/.*\//, '').replace(/\.md$/, '.spec.md');
     return `.visual-uat/specs/${basename}`;
   }
 }

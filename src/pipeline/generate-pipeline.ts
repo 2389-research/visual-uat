@@ -48,8 +48,16 @@ export class GeneratePipeline {
     this.bddWriter = new BDDWriter(specsPath);
     this.manifest = new SpecManifest(projectDir);
 
-    // For now, only Playwright is supported
-    this.runner = new PlaywrightRunner();
+    this.runner = this.createRunner(options.runner);
+  }
+
+  private createRunner(runnerName: string): TestRunnerPlugin {
+    switch (runnerName) {
+      case 'playwright':
+        return new PlaywrightRunner();
+      default:
+        throw new Error(`Unsupported runner: ${runnerName}. Currently only 'playwright' is supported.`);
+    }
   }
 
   async run(runOptions?: RunOptions): Promise<GenerateResult> {
