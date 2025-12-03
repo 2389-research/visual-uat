@@ -65,12 +65,14 @@ describe('Smart Differ Types', () => {
       blockSize: 50,
       fallbackThreshold: 3,
       enableColumnPass: true,
-      columnPassThreshold: 0.5
+      columnPassThreshold: 0.5,
+      columnStripWidth: 32
     };
 
     expect(config.adaptiveThreshold).toBeLessThanOrEqual(1);
     expect(config.searchWindow).toBeGreaterThan(0);
     expect(config.enableColumnPass).toBe(true);
     expect(config.columnPassThreshold).toBeLessThanOrEqual(1);
+    expect(config.columnStripWidth).toBeGreaterThan(0);
   });
 });

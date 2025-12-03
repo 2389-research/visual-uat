@@ -24,7 +24,8 @@ export class ColumnAligner {
     rowRange: { startRow: number; endRow: number }
   ): Promise<ColumnAlignmentResult> {
     const width = Math.min(baseline.width, current.width);
-    const columnWidth = Math.max(1, Math.floor(width / 10)); // Divide into ~10 strips
+    // Use configurable strip width for finer granularity (captures gutters/margins better)
+    const columnWidth = Math.max(1, this.config.columnStripWidth ?? 32);
 
     const rawChangedColumns: ColumnRange[] = [];
     const rawUnchangedColumns: ColumnRange[] = [];

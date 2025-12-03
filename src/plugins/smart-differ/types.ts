@@ -44,6 +44,7 @@ export interface SmartDifferConfig {
   fallbackThreshold: number;    // 3 default
   enableColumnPass: boolean;    // true default - enable column-based refinement
   columnPassThreshold: number;  // 0.5 default - threshold for column refinement (lower = more lenient)
+  columnStripWidth: number;     // 32 default - width of column strips for refinement (smaller = more precise)
 }
 
 export const DEFAULT_CONFIG: SmartDifferConfig = {
@@ -52,5 +53,6 @@ export const DEFAULT_CONFIG: SmartDifferConfig = {
   blockSize: 50,
   fallbackThreshold: 3,
   enableColumnPass: true,
-  columnPassThreshold: 0.5
+  columnPassThreshold: 0.5,
+  columnStripWidth: 32
 };
