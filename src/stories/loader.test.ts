@@ -33,7 +33,7 @@ As a customer browsing products, I want to add an item to my cart.
   });
 
   describe('loadStories', () => {
-    it('should load all .story.md files from directory', () => {
+    it('should load all .md files from directory', () => {
       const loader = new StoryLoader(testDir);
       const stories = loader.loadStories();
 

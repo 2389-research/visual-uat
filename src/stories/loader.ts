@@ -1,5 +1,5 @@
 // ABOUTME: Story loader service for natural language test definitions
-// ABOUTME: Loads .story.md files and computes content hashes for change detection
+// ABOUTME: Loads .md files from stories directory and computes content hashes for change detection
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -19,7 +19,7 @@ export class StoryLoader {
     }
 
     const files = fs.readdirSync(this.storiesDir);
-    const storyFiles = files.filter(f => f.endsWith('.story.md'));
+    const storyFiles = files.filter(f => f.endsWith('.md'));
 
     return storyFiles.map(file => {
       const filePath = path.join(this.storiesDir, file);

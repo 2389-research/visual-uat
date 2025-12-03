@@ -48,7 +48,9 @@ export interface Config {
 export const DEFAULT_CONFIG: Partial<Config> = {
   baseBranch: 'main',
   specsDir: './tests',
+  storiesDir: './tests/stories',
   generatedDir: './tests/generated',
+  runner: 'playwright',
   evaluator: {
     autoPassThreshold: 0.95,
     autoFailThreshold: 0.3
