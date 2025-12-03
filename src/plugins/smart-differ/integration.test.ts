@@ -169,4 +169,96 @@ describe('SmartDiffer Integration', () => {
     // The differ should detect that content has changed, even if blocks still exist
     expect(result.pixelDiffPercent).toBeGreaterThan(0);
   });
+
+  describe('column pass integration', () => {
+    it('should narrow diff to changed column in multi-column layout', async () => {
+      // Create test images simulating 3-column layout
+      // where middle column has insertion
+      const baseline = new PNG({ width: 300, height: 200 });
+      const current = new PNG({ width: 300, height: 220 });
+
+      // Fill baseline with white background
+      for (let i = 0; i < baseline.data.length; i += 4) {
+        baseline.data[i] = 255;
+        baseline.data[i + 1] = 255;
+        baseline.data[i + 2] = 255;
+        baseline.data[i + 3] = 255;
+      }
+
+      // Add colored columns to baseline to simulate layout
+      // Left column (0-100): light blue
+      for (let y = 0; y < 200; y++) {
+        for (let x = 0; x < 100; x++) {
+          const idx = (y * 300 + x) << 2;
+          baseline.data[idx] = 200;
+          baseline.data[idx + 1] = 220;
+          baseline.data[idx + 2] = 255;
+        }
+      }
+      // Middle column (100-200): white (content area)
+      // Right column (200-300): light blue
+      for (let y = 0; y < 200; y++) {
+        for (let x = 200; x < 300; x++) {
+          const idx = (y * 300 + x) << 2;
+          baseline.data[idx] = 200;
+          baseline.data[idx + 1] = 220;
+          baseline.data[idx + 2] = 255;
+        }
+      }
+
+      // Fill current with same 3-column layout
+      for (let i = 0; i < current.data.length; i += 4) {
+        current.data[i] = 255;
+        current.data[i + 1] = 255;
+        current.data[i + 2] = 255;
+        current.data[i + 3] = 255;
+      }
+
+      // Left column (0-100): light blue (same as baseline)
+      for (let y = 0; y < 220; y++) {
+        for (let x = 0; x < 100; x++) {
+          const idx = (y * 300 + x) << 2;
+          current.data[idx] = 200;
+          current.data[idx + 1] = 220;
+          current.data[idx + 2] = 255;
+        }
+      }
+      // Right column (200-300): light blue (same as baseline)
+      for (let y = 0; y < 220; y++) {
+        for (let x = 200; x < 300; x++) {
+          const idx = (y * 300 + x) << 2;
+          current.data[idx] = 200;
+          current.data[idx + 1] = 220;
+          current.data[idx + 2] = 255;
+        }
+      }
+
+      // Middle column has insertion: rows 100-120 are green (new content)
+      for (let y = 100; y < 120; y++) {
+        for (let x = 100; x < 200; x++) {
+          const idx = (y * 300 + x) << 2;
+          current.data[idx] = 100;
+          current.data[idx + 1] = 255;
+          current.data[idx + 2] = 100;
+        }
+      }
+
+      const differ = new SmartDiffer({ enableColumnPass: true });
+      const result = await differ.compare(
+        { data: PNG.sync.write(baseline), width: 300, height: 200, checkpoint: 'test' },
+        { data: PNG.sync.write(current), width: 300, height: 220, checkpoint: 'test' }
+      );
+
+      // Verify diff is localized, not full-width
+      // At least one changed region should be narrower than full width
+      const narrowRegions = result.changedRegions.filter(r => r.width < 300);
+      expect(narrowRegions.length).toBeGreaterThan(0);
+
+      // The narrowed region should be roughly in the middle column area
+      const middleColumnRegions = narrowRegions.filter(
+        r => r.x >= 80 && r.x + r.width <= 220
+      );
+      expect(middleColumnRegions.length).toBeGreaterThan(0);
+    });
+  });
 });
