@@ -42,7 +42,11 @@ export class ColumnAligner {
 
       const range: ColumnRange = { startX, endX, similarity };
 
-      if (similarity >= this.config.adaptiveThreshold) {
+      // Use columnPassThreshold for column refinement (lower than adaptiveThreshold)
+      // This separates columns with major changes (like image areas) from columns
+      // with minor/no changes (like text margins and whitespace)
+      const threshold = this.config.columnPassThreshold ?? 0.5;
+      if (similarity >= threshold) {
         rawUnchangedColumns.push(range);
       } else {
         rawChangedColumns.push(range);

@@ -208,6 +208,63 @@ describe('AdaptiveAligner', () => {
       expect(hasNarrowedRegion).toBe(true);
     });
 
+    it('should narrow regions when only image areas differ (opacity test)', async () => {
+      // This mimics the user's scenario: a page with images where only the image
+      // opacity differs. The row comparison fails because the image area differs,
+      // but the column pass should narrow to just the image columns.
+      const baseline = new PNG({ width: 300, height: 50 });
+      const current = new PNG({ width: 300, height: 50 });
+
+      // Fill both with white background
+      for (let i = 0; i < baseline.data.length; i += 4) {
+        baseline.data[i] = 255;
+        baseline.data[i + 1] = 255;
+        baseline.data[i + 2] = 255;
+        baseline.data[i + 3] = 255;
+        current.data[i] = 255;
+        current.data[i + 1] = 255;
+        current.data[i + 2] = 255;
+        current.data[i + 3] = 255;
+      }
+
+      // Add "image" area in columns 100-150: gray in baseline, lighter gray in current
+      // This simulates an image with different opacity
+      for (let y = 0; y < 50; y++) {
+        for (let x = 100; x < 150; x++) {
+          const idx = (y * 300 + x) << 2;
+          // Baseline: dark gray (like image at full opacity)
+          baseline.data[idx] = 80;
+          baseline.data[idx + 1] = 80;
+          baseline.data[idx + 2] = 80;
+          // Current: lighter gray (like image at reduced opacity blended with white)
+          current.data[idx] = 160;
+          current.data[idx + 1] = 160;
+          current.data[idx + 2] = 160;
+        }
+      }
+
+      const alignerWithColumnPass = new AdaptiveAligner({
+        ...DEFAULT_CONFIG,
+        enableColumnPass: true,
+        fallbackThreshold: 100
+      });
+      const result = await alignerWithColumnPass.align(baseline, current);
+
+      // Should have regions that are narrowed to the changed columns
+      const narrowedRegions = result.regions.filter(r =>
+        r.type === 'matched' &&
+        r.current &&
+        r.current.width < 300
+      );
+
+      // Expect at least one narrowed region in the 100-150 area
+      expect(narrowedRegions.length).toBeGreaterThan(0);
+      const hasRegionInImageArea = narrowedRegions.some(r =>
+        r.current && r.current.x >= 90 && r.current.x <= 160
+      );
+      expect(hasRegionInImageArea).toBe(true);
+    });
+
     it('should narrow down changed regions using column pass', async () => {
       // Create 300x200 images where middle column (100-200) has extra content
       const baseline = new PNG({ width: 300, height: 200 });
