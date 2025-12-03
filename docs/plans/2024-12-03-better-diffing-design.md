@@ -125,10 +125,10 @@ interface SmartDifferConfig {
 
 **When column pass activates:**
 
-- Runs on regions marked as "inserted" by the row alignment
-- Skips regions that are already matched or deleted
+- Runs on regions marked as "inserted" or "deleted" by the row alignment
+- Skips matched regions (which don't need refinement)
 - Only refines when both changed and unchanged columns are detected
-- Falls back to original region if entire width changed
+- Falls back to original full-width region if all columns are changed (no unchanged columns found)
 
 **Configuration guidance:**
 
