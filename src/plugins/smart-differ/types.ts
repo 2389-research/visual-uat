@@ -42,11 +42,13 @@ export interface SmartDifferConfig {
   searchWindow: number;         // 50 default
   blockSize: number;            // 50 default
   fallbackThreshold: number;    // 3 default
+  enableColumnPass: boolean;    // true default - enable column-based refinement
 }
 
 export const DEFAULT_CONFIG: SmartDifferConfig = {
   adaptiveThreshold: 0.95,
   searchWindow: 50,
   blockSize: 50,
-  fallbackThreshold: 3
+  fallbackThreshold: 3,
+  enableColumnPass: true
 };

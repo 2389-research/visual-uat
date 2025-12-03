@@ -6,6 +6,7 @@ import { TestGenerator, TargetRunner, Differ, Evaluator, ReporterPlugin } from '
 import { StubTestGenerator } from '../../plugins/test-generator-stub';
 import { WebRunner } from '../../plugins/web-runner';
 import { SmartDiffer } from '../../plugins/smart-differ';
+import { QuadtreeDiffer } from '../../plugins/quadtree-differ';
 import { ClaudeEvaluator } from '../../plugins/claude-evaluator';
 import { TerminalReporter } from '../../plugins/terminal-reporter';
 import { HTMLReporter } from '../../plugins/html-reporter';
@@ -26,6 +27,7 @@ export class PluginRegistry {
     '@visual-uat/stub-generator': StubTestGenerator,
     '@visual-uat/web-runner': WebRunner,
     '@visual-uat/smart-differ': SmartDiffer,
+    '@visual-uat/quadtree-differ': QuadtreeDiffer,
     '@visual-uat/claude-evaluator': ClaudeEvaluator
   };
 

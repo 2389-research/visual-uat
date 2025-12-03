@@ -166,4 +166,15 @@ describe('PluginRegistry', () => {
       expect(typeof plugins.htmlReporter.generate).toBe('function');
     });
   });
+
+  describe('QuadtreeDiffer', () => {
+    it('should load quadtree-differ plugin', () => {
+      config.plugins.differ = '@visual-uat/quadtree-differ';
+      const registry = new PluginRegistry(config);
+      const plugins = registry.loadAll();
+
+      expect(plugins.differ).toBeDefined();
+      expect(plugins.differ.constructor.name).toBe('QuadtreeDiffer');
+    });
+  });
 });

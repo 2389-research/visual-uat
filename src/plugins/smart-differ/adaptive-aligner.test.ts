@@ -150,4 +150,49 @@ describe('AdaptiveAligner', () => {
 
     expect(result.fallbackTriggered).toBe(true);
   });
+
+  describe('column pass integration', () => {
+    it('should narrow down changed regions using column pass', async () => {
+      // Create 300x200 images where middle column (100-200) has extra content
+      const baseline = new PNG({ width: 300, height: 200 });
+      const current = new PNG({ width: 300, height: 220 }); // 20px taller
+
+      // Fill baseline white
+      for (let i = 0; i < baseline.data.length; i += 4) {
+        baseline.data[i] = 255;
+        baseline.data[i + 1] = 255;
+        baseline.data[i + 2] = 255;
+        baseline.data[i + 3] = 255;
+      }
+
+      // Fill current - white everywhere, but middle column has red insert at row 100
+      for (let y = 0; y < current.height; y++) {
+        for (let x = 0; x < current.width; x++) {
+          const idx = (y * current.width + x) << 2;
+          // Middle column (100-200), rows 100-120: red (inserted content)
+          if (x >= 100 && x < 200 && y >= 100 && y < 120) {
+            current.data[idx] = 255;
+            current.data[idx + 1] = 0;
+            current.data[idx + 2] = 0;
+          } else {
+            current.data[idx] = 255;
+            current.data[idx + 1] = 255;
+            current.data[idx + 2] = 255;
+          }
+          current.data[idx + 3] = 255;
+        }
+      }
+
+      const alignerWithColumnPass = new AdaptiveAligner({ ...DEFAULT_CONFIG, enableColumnPass: true });
+      const result = await alignerWithColumnPass.align(baseline, current);
+
+      // Should have narrowed regions that don't span full width
+      const insertedRegion = result.regions.find(r => r.type === 'inserted');
+      expect(insertedRegion).toBeDefined();
+      if (insertedRegion?.current) {
+        // The inserted region should be narrowed to middle column, not full width
+        expect(insertedRegion.current.width).toBeLessThan(300);
+      }
+    });
+  });
 });

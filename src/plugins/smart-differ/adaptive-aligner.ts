@@ -3,6 +3,7 @@
 
 import { PNG } from 'pngjs';
 import type { AlignmentRegion, SmartDifferConfig } from './types';
+import { ColumnAligner } from './column-aligner';
 
 export interface AlignmentResult {
   regions: AlignmentRegion[];
@@ -11,7 +12,11 @@ export interface AlignmentResult {
 }
 
 export class AdaptiveAligner {
-  constructor(private config: SmartDifferConfig) {}
+  private columnAligner: ColumnAligner;
+
+  constructor(private config: SmartDifferConfig) {
+    this.columnAligner = new ColumnAligner(config);
+  }
 
   async align(baseline: PNG, current: PNG): Promise<AlignmentResult> {
     const regions: AlignmentRegion[] = [];
@@ -171,8 +176,14 @@ export class AdaptiveAligner {
       ? 0.5 + (successfulMatches / totalComparisons) * 0.5
       : 0.5;
 
+    // After row alignment, if enableColumnPass, refine shifted regions
+    let finalRegions = regions;
+    if (this.config.enableColumnPass) {
+      finalRegions = await this.refineWithColumnPass(regions, baseline, current);
+    }
+
     return {
-      regions,
+      regions: finalRegions,
       confidence: Math.min(1.0, confidence),
       fallbackTriggered: false
     };
@@ -264,5 +275,73 @@ export class AdaptiveAligner {
     }
 
     return null;
+  }
+
+  private async refineWithColumnPass(
+    regions: AlignmentRegion[],
+    baseline: PNG,
+    current: PNG
+  ): Promise<AlignmentRegion[]> {
+    const refined: AlignmentRegion[] = [];
+
+    for (const region of regions) {
+      if (region.type === 'inserted' && region.current) {
+        // Run column pass to narrow down
+        const colResult = await this.columnAligner.alignColumns(
+          baseline,
+          current,
+          { startRow: region.current.y, endRow: region.current.y + region.current.height }
+        );
+
+        if (colResult.changedColumns.length > 0 && colResult.unchangedColumns.length > 0) {
+          // Split into narrower regions
+          for (const col of colResult.changedColumns) {
+            refined.push({
+              type: 'inserted',
+              baseline: null,
+              current: {
+                x: col.startX,
+                y: region.current.y,
+                width: col.endX - col.startX,
+                height: region.current.height
+              },
+              similarity: null
+            });
+          }
+        } else {
+          refined.push(region);
+        }
+      } else if (region.type === 'deleted' && region.baseline) {
+        // Run column pass to narrow down deleted regions too
+        const colResult = await this.columnAligner.alignColumns(
+          baseline,
+          current,
+          { startRow: region.baseline.y, endRow: region.baseline.y + region.baseline.height }
+        );
+
+        if (colResult.changedColumns.length > 0 && colResult.unchangedColumns.length > 0) {
+          // Split into narrower regions
+          for (const col of colResult.changedColumns) {
+            refined.push({
+              type: 'deleted',
+              baseline: {
+                x: col.startX,
+                y: region.baseline.y,
+                width: col.endX - col.startX,
+                height: region.baseline.height
+              },
+              current: null,
+              similarity: null
+            });
+          }
+        } else {
+          refined.push(region);
+        }
+      } else {
+        refined.push(region);
+      }
+    }
+
+    return refined;
   }
 }
