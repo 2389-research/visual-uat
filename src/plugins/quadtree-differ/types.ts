@@ -12,7 +12,7 @@ export const DEFAULT_QUADTREE_CONFIG: QuadtreeConfig = {
   minBlockSize: 16,            // Smaller blocks for finer detection
   similarityThreshold: 0.95,
   maxDepth: 10,
-  pixelThreshold: 10           // More sensitive to subtle changes like opacity
+  pixelThreshold: 5            // Very sensitive to subtle changes like opacity
 };
 
 export interface QuadtreeNode {

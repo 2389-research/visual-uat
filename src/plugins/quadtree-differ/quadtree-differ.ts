@@ -185,10 +185,10 @@ export class QuadtreeDiffer implements Differ {
           const inCurrent = x < current.width && y < current.height;
 
           if (inBaseline && inCurrent) {
-            // Modification (both have pixels) - Yellow/Orange tint
-            diff.data[idx] = Math.min(255, diff.data[idx] + 80);      // Boost red
-            diff.data[idx + 1] = Math.min(255, diff.data[idx + 1] + 40); // Slight boost green (makes orange)
-            diff.data[idx + 2] = Math.max(0, diff.data[idx + 2] - 80);   // Reduce blue
+            // Modification (both have pixels) - Safety Orange tint (high visibility)
+            diff.data[idx] = Math.min(255, diff.data[idx] + 140);     // Strong red boost
+            diff.data[idx + 1] = Math.min(255, Math.floor(diff.data[idx + 1] * 0.6) + 60); // Moderate green
+            diff.data[idx + 2] = Math.max(0, diff.data[idx + 2] - 100);  // Remove blue
           } else if (inCurrent && !inBaseline) {
             // Addition (only in current) - Green tint
             diff.data[idx] = Math.max(0, diff.data[idx] - 50);
