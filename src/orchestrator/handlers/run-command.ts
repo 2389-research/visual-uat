@@ -209,7 +209,8 @@ export class RunCommandHandler {
 
       const specsToRun = context.scope!.specsToGenerate;
 
-      for (const specPath of specsToRun) {
+      // Run all tests in parallel
+      const testPromises = specsToRun.map(async (specPath) => {
         const baseName = path.basename(specPath, '.md');
         const testPath = path.resolve(
           context.worktrees!.current,
@@ -225,7 +226,11 @@ export class RunCommandHandler {
         if (result.status === 'errored') {
           console.warn(`Current test errored: ${baseName} - ${result.error}`);
         }
-      }
+
+        return { specPath, result };
+      });
+
+      await Promise.all(testPromises);
 
       return 'COMPARE_AND_EVALUATE';
     } catch (error) {
