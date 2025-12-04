@@ -288,11 +288,10 @@ export class RunCommandHandler {
         }
 
         // Compare screenshots for each checkpoint
-        const checkpoints: import('../types/results').CheckpointResult[] = [];
         const specContent = fs.readFileSync(specPath, 'utf-8');
 
-        for (let i = 0; i < baseResult.screenshots.length; i++) {
-          const checkpointName = baseResult.screenshots[i];
+        // Compare all checkpoints in parallel with partial results
+        const checkpointPromises = baseResult.screenshots.map(async (checkpointName, i) => {
           const baseImagePath = path.join(
             this.projectRoot,
             '.visual-uat/screenshots/base',
@@ -361,7 +360,7 @@ export class RunCommandHandler {
           }
           fs.writeFileSync(diffImagePath, diffResult.diffImage);
 
-          checkpoints.push({
+          return {
             name: path.basename(checkpointName, '.png'),
             baselineImage: baseImagePath,
             currentImage: currentImagePath,
@@ -371,7 +370,19 @@ export class RunCommandHandler {
               changedRegions: diffResult.changedRegions
             },
             evaluation: evaluation
-          });
+          };
+        });
+
+        const settled = await Promise.allSettled(checkpointPromises);
+
+        // Extract results, log failures
+        const checkpoints: import('../types/results').CheckpointResult[] = [];
+        for (const [i, outcome] of settled.entries()) {
+          if (outcome.status === 'fulfilled') {
+            checkpoints.push(outcome.value);
+          } else {
+            console.warn(`Checkpoint ${baseResult.screenshots[i]} failed: ${outcome.reason}`);
+          }
         }
 
         // Determine overall test status
