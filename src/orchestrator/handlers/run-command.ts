@@ -475,25 +475,32 @@ export class RunCommandHandler {
         autoOpen: this.runOptions?.open || false
       };
 
-      // Call terminal reporter first for immediate feedback (unless disabled in config)
+      // Run reporters in parallel
+      const reporterPromises: Promise<void>[] = [];
+
+      // Terminal reporter (unless disabled)
       const terminalEnabled = this.config.reporters?.terminal?.enabled !== false;
       if (terminalEnabled) {
-        try {
-          await this.plugins.terminalReporter.generate(context.runResult!, reporterOptions);
-        } catch (error) {
-          console.error('Terminal reporter failed:', error);
-        }
+        reporterPromises.push(
+          this.plugins.terminalReporter.generate(context.runResult!, reporterOptions)
+            .catch((error) => {
+              console.error('Terminal reporter failed:', error);
+            })
+        );
       }
 
-      // Call HTML reporter second (unless --no-html flag is set or disabled in config)
+      // HTML reporter (unless --no-html or disabled)
       const htmlEnabled = this.config.reporters?.html?.enabled !== false;
       if (!this.runOptions?.noHtml && htmlEnabled) {
-        try {
-          await this.plugins.htmlReporter.generate(context.runResult!, reporterOptions);
-        } catch (error) {
-          console.error('HTML reporter failed:', error);
-        }
+        reporterPromises.push(
+          this.plugins.htmlReporter.generate(context.runResult!, reporterOptions)
+            .catch((error) => {
+              console.error('HTML reporter failed:', error);
+            })
+        );
       }
+
+      await Promise.all(reporterPromises);
 
       return 'CLEANUP';
     } catch (error) {
