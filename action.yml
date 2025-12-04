@@ -1,0 +1,48 @@
+name: 'Visual UAT'
+description: 'Run visual acceptance tests comparing screenshots between branches with AI-powered evaluation'
+author: '2389-research'
+
+branding:
+  icon: 'eye'
+  color: 'orange'
+
+inputs:
+  anthropic-api-key:
+    description: 'Anthropic API key for LLM evaluation (pass from secrets)'
+    required: true
+  working-directory:
+    description: 'Directory containing visual-uat.config.js'
+    required: false
+    default: '.'
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+  verbose:
+    description: 'Enable verbose output'
+    required: false
+    default: 'false'
+  fail-fast:
+    description: 'Stop on first test failure'
+    required: false
+    default: 'false'
+  base-branch:
+    description: 'Override base branch for comparison (default: from config)'
+    required: false
+    default: ''
+  extra-args:
+    description: 'Additional CLI arguments (e.g., "--no-html --quiet")'
+    required: false
+    default: ''
+
+outputs:
+  result:
+    description: 'Test result: passed, failed, or errored'
+    value: ${{ steps.run-tests.outputs.result }}
+  report-path:
+    description: 'Path to the HTML report'
+    value: ${{ steps.run-tests.outputs.report-path }}
+
+runs:
+  using: 'composite'
+  steps: []
