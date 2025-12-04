@@ -34,8 +34,8 @@ describe('RunCommandHandler - Setup Phase', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     // Mock fs for SpecManifest
@@ -96,8 +96,8 @@ describe('RunCommandHandler - Generation Phase', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     jest.clearAllMocks();
@@ -258,8 +258,8 @@ describe('RunCommandHandler.handleSetup', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     jest.clearAllMocks();
@@ -476,8 +476,8 @@ describe('RunCommandHandler.handleExecuteBase', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     jest.clearAllMocks();
@@ -621,8 +621,8 @@ describe('RunCommandHandler.handleExecuteCurrent', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     jest.clearAllMocks();
@@ -843,8 +843,8 @@ describe('RunCommandHandler.handleCompareAndEvaluate', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     jest.clearAllMocks();
@@ -1076,8 +1076,8 @@ describe('RunCommandHandler.handleStoreResults', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     jest.clearAllMocks();
@@ -1613,8 +1613,8 @@ describe('RunCommandHandler.handleStoreResults - Reporter Config', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     jest.clearAllMocks();
@@ -1987,8 +1987,8 @@ describe('RunCommandHandler.handleCleanup', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     jest.clearAllMocks();
@@ -2101,8 +2101,8 @@ describe('RunCommandHandler.execute', () => {
       targetRunner: { start: jest.fn(), stop: jest.fn(), isReady: jest.fn() } as any,
       differ: { compare: jest.fn() } as any,
       evaluator: { evaluate: jest.fn() } as any,
-      terminalReporter: { generate: jest.fn() } as any,
-      htmlReporter: { generate: jest.fn() } as any
+      terminalReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any,
+      htmlReporter: { generate: jest.fn().mockResolvedValue(undefined) } as any
     };
 
     jest.clearAllMocks();

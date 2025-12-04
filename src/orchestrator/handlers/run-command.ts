@@ -166,7 +166,8 @@ export class RunCommandHandler {
       // Get list of generated tests
       const specsToRun = context.scope!.specsToGenerate;
 
-      for (const specPath of specsToRun) {
+      // Run all tests in parallel
+      const testPromises = specsToRun.map(async (specPath) => {
         const baseName = path.basename(specPath, '.md');
         const testPath = path.resolve(
           this.projectRoot,
@@ -175,7 +176,7 @@ export class RunCommandHandler {
         );
 
         console.log(`Running base test: ${baseName}`);
-        const result = runner.runTest(testPath);
+        const result = await runner.runTest(testPath);
 
         context.baseResults.set(specPath, result);
 
@@ -183,7 +184,11 @@ export class RunCommandHandler {
           console.warn(`Base test errored: ${baseName} - ${result.error}`);
           console.warn('Will continue but flag as no baseline available');
         }
-      }
+
+        return { specPath, result };
+      });
+
+      await Promise.all(testPromises);
 
       return 'EXECUTE_CURRENT';
     } catch (error) {
@@ -204,7 +209,8 @@ export class RunCommandHandler {
 
       const specsToRun = context.scope!.specsToGenerate;
 
-      for (const specPath of specsToRun) {
+      // Run all tests in parallel
+      const testPromises = specsToRun.map(async (specPath) => {
         const baseName = path.basename(specPath, '.md');
         const testPath = path.resolve(
           context.worktrees!.current,
@@ -213,14 +219,18 @@ export class RunCommandHandler {
         );
 
         console.log(`Running current test: ${baseName}`);
-        const result = runner.runTest(testPath);
+        const result = await runner.runTest(testPath);
 
         context.currentResults.set(specPath, result);
 
         if (result.status === 'errored') {
           console.warn(`Current test errored: ${baseName} - ${result.error}`);
         }
-      }
+
+        return { specPath, result };
+      });
+
+      await Promise.all(testPromises);
 
       return 'COMPARE_AND_EVALUATE';
     } catch (error) {
@@ -278,11 +288,10 @@ export class RunCommandHandler {
         }
 
         // Compare screenshots for each checkpoint
-        const checkpoints: import('../types/results').CheckpointResult[] = [];
         const specContent = fs.readFileSync(specPath, 'utf-8');
 
-        for (let i = 0; i < baseResult.screenshots.length; i++) {
-          const checkpointName = baseResult.screenshots[i];
+        // Compare all checkpoints in parallel with partial results
+        const checkpointPromises = baseResult.screenshots.map(async (checkpointName, i) => {
           const baseImagePath = path.join(
             this.projectRoot,
             '.visual-uat/screenshots/base',
@@ -351,7 +360,7 @@ export class RunCommandHandler {
           }
           fs.writeFileSync(diffImagePath, diffResult.diffImage);
 
-          checkpoints.push({
+          return {
             name: path.basename(checkpointName, '.png'),
             baselineImage: baseImagePath,
             currentImage: currentImagePath,
@@ -361,7 +370,19 @@ export class RunCommandHandler {
               changedRegions: diffResult.changedRegions
             },
             evaluation: evaluation
-          });
+          };
+        });
+
+        const settled = await Promise.allSettled(checkpointPromises);
+
+        // Extract results, log failures
+        const checkpoints: import('../types/results').CheckpointResult[] = [];
+        for (const [i, outcome] of settled.entries()) {
+          if (outcome.status === 'fulfilled') {
+            checkpoints.push(outcome.value);
+          } else {
+            console.warn(`Checkpoint ${baseResult.screenshots[i]} failed: ${outcome.reason}`);
+          }
         }
 
         // Determine overall test status
@@ -454,25 +475,32 @@ export class RunCommandHandler {
         autoOpen: this.runOptions?.open || false
       };
 
-      // Call terminal reporter first for immediate feedback (unless disabled in config)
+      // Run reporters in parallel
+      const reporterPromises: Promise<void>[] = [];
+
+      // Terminal reporter (unless disabled)
       const terminalEnabled = this.config.reporters?.terminal?.enabled !== false;
       if (terminalEnabled) {
-        try {
-          await this.plugins.terminalReporter.generate(context.runResult!, reporterOptions);
-        } catch (error) {
-          console.error('Terminal reporter failed:', error);
-        }
+        reporterPromises.push(
+          this.plugins.terminalReporter.generate(context.runResult!, reporterOptions)
+            .catch((error) => {
+              console.error('Terminal reporter failed:', error);
+            })
+        );
       }
 
-      // Call HTML reporter second (unless --no-html flag is set or disabled in config)
+      // HTML reporter (unless --no-html or disabled)
       const htmlEnabled = this.config.reporters?.html?.enabled !== false;
       if (!this.runOptions?.noHtml && htmlEnabled) {
-        try {
-          await this.plugins.htmlReporter.generate(context.runResult!, reporterOptions);
-        } catch (error) {
-          console.error('HTML reporter failed:', error);
-        }
+        reporterPromises.push(
+          this.plugins.htmlReporter.generate(context.runResult!, reporterOptions)
+            .catch((error) => {
+              console.error('HTML reporter failed:', error);
+            })
+        );
       }
+
+      await Promise.all(reporterPromises);
 
       return 'CLEANUP';
     } catch (error) {
