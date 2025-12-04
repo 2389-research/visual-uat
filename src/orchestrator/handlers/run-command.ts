@@ -166,7 +166,8 @@ export class RunCommandHandler {
       // Get list of generated tests
       const specsToRun = context.scope!.specsToGenerate;
 
-      for (const specPath of specsToRun) {
+      // Run all tests in parallel
+      const testPromises = specsToRun.map(async (specPath) => {
         const baseName = path.basename(specPath, '.md');
         const testPath = path.resolve(
           this.projectRoot,
@@ -175,7 +176,7 @@ export class RunCommandHandler {
         );
 
         console.log(`Running base test: ${baseName}`);
-        const result = runner.runTest(testPath);
+        const result = await runner.runTest(testPath);
 
         context.baseResults.set(specPath, result);
 
@@ -183,7 +184,11 @@ export class RunCommandHandler {
           console.warn(`Base test errored: ${baseName} - ${result.error}`);
           console.warn('Will continue but flag as no baseline available');
         }
-      }
+
+        return { specPath, result };
+      });
+
+      await Promise.all(testPromises);
 
       return 'EXECUTE_CURRENT';
     } catch (error) {
@@ -213,7 +218,7 @@ export class RunCommandHandler {
         );
 
         console.log(`Running current test: ${baseName}`);
-        const result = runner.runTest(testPath);
+        const result = await runner.runTest(testPath);
 
         context.currentResults.set(specPath, result);
 
