@@ -27,7 +27,7 @@ inputs:
     required: false
     default: 'false'
   base-branch:
-    description: 'Override base branch for comparison (default: from config)'
+    description: 'Override base branch for comparison (auto-detects PR target branch, falls back to config)'
     required: false
     default: ''
   extra-args:
@@ -98,8 +98,12 @@ runs:
           CMD="$CMD --fail-fast"
         fi
 
+        # Use explicit base-branch input, or auto-detect from PR context
         if [ -n "${{ inputs.base-branch }}" ]; then
           CMD="$CMD --base ${{ inputs.base-branch }}"
+        elif [ -n "$GITHUB_BASE_REF" ]; then
+          echo "Detected PR target branch: $GITHUB_BASE_REF"
+          CMD="$CMD --base $GITHUB_BASE_REF"
         fi
 
         if [ -n "${{ inputs.extra-args }}" ]; then

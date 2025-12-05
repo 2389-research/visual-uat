@@ -215,7 +215,7 @@ jobs:
 | `node-version` | No | `20` | Node.js version to use |
 | `verbose` | No | `false` | Enable verbose output |
 | `fail-fast` | No | `false` | Stop on first test failure |
-| `base-branch` | No | - | Override base branch for comparison |
+| `base-branch` | No | PR target | Override base branch (auto-detects PR target) |
 | `extra-args` | No | - | Additional CLI arguments |
 
 ### Action Outputs
