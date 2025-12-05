@@ -53,7 +53,7 @@ runs:
           echo "::error title=Missing API Key::ANTHROPIC_API_KEY is required for LLM evaluation."
           echo "::error::Add it to your repository secrets and pass it as:"
           echo "::error::  with:"
-          echo "::error::    anthropic-api-key: \${{ secrets.ANTHROPIC_API_KEY }}"
+          echo "::error::    anthropic-api-key: \$\{\{ secrets.ANTHROPIC_API_KEY \}\}"
           exit 1
         fi
         echo "✓ Anthropic API key provided"
