@@ -61,12 +61,6 @@ outputs:
     description: 'Test result: passed, failed, or errored'
   report-path:
     description: 'Path to the HTML report'
-  total-tests:
-    description: 'Total number of tests run'
-  passed-tests:
-    description: 'Number of passed tests'
-  failed-tests:
-    description: 'Number of failed tests'
 ```
 
 ## Action Steps
