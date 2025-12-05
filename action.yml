@@ -125,3 +125,14 @@ runs:
           echo "✗ Visual tests failed (exit code: $EXIT_CODE)"
           exit $EXIT_CODE
         fi
+
+    - name: Upload report and diffs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: visual-uat-report
+        path: |
+          ${{ inputs.working-directory }}/.visual-uat/reports/
+          ${{ inputs.working-directory }}/.visual-uat/diffs/
+          ${{ inputs.working-directory }}/.visual-uat/screenshots/
+        if-no-files-found: warn
