@@ -77,3 +77,51 @@ runs:
         echo "Installing Playwright Chromium..."
         npx playwright install --with-deps chromium
         echo "✓ Playwright browsers installed"
+
+    - name: Run visual-uat
+      id: run-tests
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+      run: |
+        echo "Running visual-uat..."
+
+        # Build command with optional flags
+        CMD="visual-uat run"
+
+        if [ "${{ inputs.verbose }}" = "true" ]; then
+          CMD="$CMD --verbose"
+        fi
+
+        if [ "${{ inputs.fail-fast }}" = "true" ]; then
+          CMD="$CMD --fail-fast"
+        fi
+
+        if [ -n "${{ inputs.base-branch }}" ]; then
+          CMD="$CMD --base ${{ inputs.base-branch }}"
+        fi
+
+        if [ -n "${{ inputs.extra-args }}" ]; then
+          CMD="$CMD ${{ inputs.extra-args }}"
+        fi
+
+        echo "Executing: $CMD"
+
+        # Run and capture exit code
+        set +e
+        $CMD
+        EXIT_CODE=$?
+        set -e
+
+        # Set outputs
+        echo "report-path=${{ inputs.working-directory }}/.visual-uat/reports/latest.html" >> $GITHUB_OUTPUT
+
+        if [ $EXIT_CODE -eq 0 ]; then
+          echo "result=passed" >> $GITHUB_OUTPUT
+          echo "✓ Visual tests passed"
+        else
+          echo "result=failed" >> $GITHUB_OUTPUT
+          echo "✗ Visual tests failed (exit code: $EXIT_CODE)"
+          exit $EXIT_CODE
+        fi
