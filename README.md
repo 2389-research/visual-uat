@@ -239,9 +239,37 @@ The action auto-detects the PR's target branch for comparison.
 | `result` | Test result: `passed`, `failed`, or `errored` |
 | `report-path` | Path to the HTML report |
 
-### Artifacts
+### Viewing Reports
 
-The action automatically uploads:
+Reports are automatically uploaded to a secure Cloudflare hosting service and posted as PR comments:
+
+```markdown
+📸 **Visual UAT Report**
+
+[View Report](https://visual-uat-reports.2389-research-inc.workers.dev/...)
+
+**Result:** passed
+**Expires:** 2025-12-12T21:19:25.099Z
+
+The report is accessible with a secure token and will automatically expire in 7 days.
+```
+
+**Features:**
+- **Token-protected URLs** - Each report has a unique 32-character access token
+- **7-day expiration** - Reports automatically expire and are deleted
+- **No setup required** - Works out of the box for all users
+- **Rate limited** - 10 uploads per hour per repository
+- **Directory listing** - View all report files and screenshots
+
+**Security:**
+- GitHub token verification ensures uploads are from real PRs
+- Tokens are scoped to specific org/repo/PR combinations
+- Reports are isolated and cannot be accessed without the token
+- Automatic cleanup prevents long-term data retention
+
+### Artifacts (Fallback)
+
+If Cloudflare upload fails, the action falls back to GitHub artifacts:
 - `visual-uat-report/reports/` - HTML reports
 - `visual-uat-report/diffs/` - Visual diff images
 - `visual-uat-report/screenshots/` - Captured screenshots
