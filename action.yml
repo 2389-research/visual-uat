@@ -1,0 +1,142 @@
+name: 'Visual UAT'
+description: 'Run visual acceptance tests comparing screenshots between branches with AI-powered evaluation'
+author: '2389-research'
+
+branding:
+  icon: 'eye'
+  color: 'orange'
+
+inputs:
+  anthropic-api-key:
+    description: 'Anthropic API key for LLM evaluation (pass from secrets)'
+    required: true
+  working-directory:
+    description: 'Directory containing visual-uat.config.js'
+    required: false
+    default: '.'
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+  verbose:
+    description: 'Enable verbose output'
+    required: false
+    default: 'false'
+  fail-fast:
+    description: 'Stop on first test failure'
+    required: false
+    default: 'false'
+  base-branch:
+    description: 'Override base branch for comparison (auto-detects PR target branch, falls back to config)'
+    required: false
+    default: ''
+  extra-args:
+    description: 'Additional CLI arguments (e.g., "--no-html --quiet")'
+    required: false
+    default: ''
+
+outputs:
+  result:
+    description: 'Test result: passed, failed, or errored'
+    value: ${{ steps.run-tests.outputs.result }}
+  report-path:
+    description: 'Path to the HTML report'
+    value: ${{ steps.run-tests.outputs.report-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate Anthropic API key
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.anthropic-api-key }}" ]; then
+          echo "::error title=Missing API Key::ANTHROPIC_API_KEY is required for LLM evaluation."
+          echo "::error::Add it to your repository secrets and pass it as:"
+          echo "::error::  with:"
+          echo "::error::    anthropic-api-key: \${{ secrets.ANTHROPIC_API_KEY }}"
+          exit 1
+        fi
+        echo "✓ Anthropic API key provided"
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install visual-uat
+      shell: bash
+      run: |
+        echo "Installing visual-uat..."
+        npm install -g visual-uat
+        echo "✓ visual-uat installed: $(visual-uat --version || echo 'version check not available')"
+
+    - name: Install Playwright browsers
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "Installing Playwright Chromium..."
+        npx playwright install --with-deps chromium
+        echo "✓ Playwright browsers installed"
+
+    - name: Run visual-uat
+      id: run-tests
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+      run: |
+        echo "Running visual-uat..."
+
+        # Build command with optional flags
+        CMD="visual-uat run"
+
+        if [ "${{ inputs.verbose }}" = "true" ]; then
+          CMD="$CMD --verbose"
+        fi
+
+        if [ "${{ inputs.fail-fast }}" = "true" ]; then
+          CMD="$CMD --fail-fast"
+        fi
+
+        # Use explicit base-branch input, or auto-detect from PR context
+        if [ -n "${{ inputs.base-branch }}" ]; then
+          CMD="$CMD --base ${{ inputs.base-branch }}"
+        elif [ -n "$GITHUB_BASE_REF" ]; then
+          echo "Detected PR target branch: $GITHUB_BASE_REF"
+          CMD="$CMD --base $GITHUB_BASE_REF"
+        fi
+
+        if [ -n "${{ inputs.extra-args }}" ]; then
+          CMD="$CMD ${{ inputs.extra-args }}"
+        fi
+
+        echo "Executing: $CMD"
+
+        # Run and capture exit code
+        set +e
+        $CMD
+        EXIT_CODE=$?
+        set -e
+
+        # Set outputs
+        echo "report-path=${{ inputs.working-directory }}/.visual-uat/reports/latest.html" >> $GITHUB_OUTPUT
+
+        if [ $EXIT_CODE -eq 0 ]; then
+          echo "result=passed" >> $GITHUB_OUTPUT
+          echo "✓ Visual tests passed"
+        else
+          echo "result=failed" >> $GITHUB_OUTPUT
+          echo "✗ Visual tests failed (exit code: $EXIT_CODE)"
+          exit $EXIT_CODE
+        fi
+
+    - name: Upload report and diffs
+      uses: actions/upload-artifact@v5
+      if: always()
+      with:
+        name: visual-uat-report
+        path: |
+          ${{ inputs.working-directory }}/.visual-uat/reports/
+          ${{ inputs.working-directory }}/.visual-uat/diffs/
+          ${{ inputs.working-directory }}/.visual-uat/screenshots/
+        if-no-files-found: warn

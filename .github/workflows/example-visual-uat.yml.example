@@ -1,0 +1,50 @@
+# Example workflow for using visual-uat GitHub Action
+# Copy this to .github/workflows/visual-uat.yml in your project
+
+name: Visual UAT
+
+on:
+  pull_request:
+    branches: [main]
+  # Optional: run on push to main for baseline updates
+  push:
+    branches: [main]
+
+jobs:
+  visual-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # IMPORTANT: fetch-depth: 0 is required for branch comparison
+          fetch-depth: 0
+
+      - name: Run Visual UAT
+        id: visual-uat
+        uses: 2389-research/visual-uat@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Optional inputs:
+          # verbose: true
+          # fail-fast: true
+          # base-branch: main
+          # working-directory: ./frontend
+
+      # Optional: Comment on PR with results
+      - name: Comment on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const result = '${{ steps.visual-uat.outputs.result }}';
+            const emoji = result === 'passed' ? '✅' : '❌';
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${emoji} **Visual UAT ${result}**\n\n[View report and artifacts](${runUrl})`
+            });
