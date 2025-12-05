@@ -67,8 +67,8 @@ runs:
       shell: bash
       run: |
         echo "Installing visual-uat..."
-        npm install -g visual-uat
-        echo "✓ visual-uat installed: $(visual-uat --version || echo 'version check not available')"
+        npm install -g github:2389-research/visual-uat
+        echo "✓ visual-uat installed"
 
     - name: Install Playwright browsers
       shell: bash
