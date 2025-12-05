@@ -147,8 +147,10 @@ runs:
           exit 0
         fi
 
+        echo "Uploading reports to Cloudflare..."
+
         # Upload reports to Cloudflare
-        RESPONSE=$(curl -s -X POST https://visual-uat-reports.2389-research-inc.workers.dev/upload \
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X POST https://visual-uat-reports.2389-research-inc.workers.dev/upload \
           -F "org=${{ github.repository_owner }}" \
           -F "repo=${{ github.event.repository.name }}" \
           -F "pr=${{ github.event.pull_request.number }}" \
@@ -157,25 +159,29 @@ runs:
           $(find .visual-uat/diffs -type f -name "*.png" 2>/dev/null | sed 's/^/-F "files=@/' | sed 's/$/"/' | tr '\n' ' ') \
           $(find .visual-uat/screenshots -type f -name "*.png" 2>/dev/null | sed 's/^/-F "files=@/' | sed 's/$/"/' | tr '\n' ' '))
 
-        REPORT_URL=$(echo "$RESPONSE" | jq -r '.url // empty')
-        EXPIRES_AT=$(echo "$RESPONSE" | jq -r '.expiresAt // empty')
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+        RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+
+        echo "HTTP Status: $HTTP_CODE"
+        echo "Response: $RESPONSE_BODY"
+
+        REPORT_URL=$(echo "$RESPONSE_BODY" | jq -r '.url // empty')
+        EXPIRES_AT=$(echo "$RESPONSE_BODY" | jq -r '.expiresAt // empty')
 
         if [ -n "$REPORT_URL" ]; then
           # Post PR comment with report URL
-          gh pr comment ${{ github.event.pull_request.number }} --body "$(cat <<EOF
-        📸 **Visual UAT Report**
+          gh pr comment ${{ github.event.pull_request.number }} --body "📸 **Visual UAT Report**
 
         [View Report]($REPORT_URL)
 
         **Result:** ${{ steps.run-tests.outputs.result }}
         **Expires:** $EXPIRES_AT
 
-        The report is accessible with a secure token and will automatically expire in 7 days.
-        EOF
-          )"
+        The report is accessible with a secure token and will automatically expire in 7 days."
+
           echo "✓ Report uploaded to: $REPORT_URL"
         else
-          echo "::warning::Failed to upload report to Cloudflare. Falling back to artifact upload."
+          echo "::warning::Failed to upload report to Cloudflare (HTTP $HTTP_CODE). Falling back to artifact upload."
           # Fall back to artifact upload
           exit 1
         fi
