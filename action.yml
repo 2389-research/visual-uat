@@ -66,8 +66,12 @@ runs:
     - name: Install visual-uat
       shell: bash
       run: |
-        echo "Installing visual-uat..."
-        npm install -g github:2389-research/visual-uat
+        echo "Installing visual-uat from source..."
+        git clone --depth 1 https://github.com/2389-research/visual-uat.git /tmp/visual-uat
+        cd /tmp/visual-uat
+        npm ci
+        npm run build
+        npm link
         echo "✓ visual-uat installed"
 
     - name: Install Playwright browsers
