@@ -149,15 +149,27 @@ runs:
 
         echo "Uploading reports to Cloudflare..."
 
+        # Build file upload args
+        FILE_ARGS=""
+        while IFS= read -r file; do
+          FILE_ARGS="$FILE_ARGS -F files=@$file"
+        done < <(find .visual-uat/reports -type f \( -name "*.html" -o -name "*.css" -o -name "*.js" \) 2>/dev/null)
+
+        while IFS= read -r file; do
+          FILE_ARGS="$FILE_ARGS -F files=@$file"
+        done < <(find .visual-uat/diffs -type f -name "*.png" 2>/dev/null)
+
+        while IFS= read -r file; do
+          FILE_ARGS="$FILE_ARGS -F files=@$file"
+        done < <(find .visual-uat/screenshots -type f -name "*.png" 2>/dev/null)
+
         # Upload reports to Cloudflare
         RESPONSE=$(curl -s -w "\n%{http_code}" -X POST https://visual-uat-reports.2389-research-inc.workers.dev/upload \
           -F "org=${{ github.repository_owner }}" \
           -F "repo=${{ github.event.repository.name }}" \
           -F "pr=${{ github.event.pull_request.number }}" \
           -F "github_token=$GITHUB_TOKEN" \
-          $(find .visual-uat/reports -type f -name "*.html" -o -name "*.css" -o -name "*.js" | sed 's/^/-F "files=@/' | sed 's/$/"/' | tr '\n' ' ') \
-          $(find .visual-uat/diffs -type f -name "*.png" 2>/dev/null | sed 's/^/-F "files=@/' | sed 's/$/"/' | tr '\n' ' ') \
-          $(find .visual-uat/screenshots -type f -name "*.png" 2>/dev/null | sed 's/^/-F "files=@/' | sed 's/$/"/' | tr '\n' ' '))
+          $FILE_ARGS)
 
         HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
         RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
