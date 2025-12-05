@@ -171,8 +171,8 @@ async function handleUpload(request: Request, env: Env, corsHeaders: Record<stri
       expirationTtl: 3600
     });
 
-    // Return report URL
-    const reportUrl = `https://visual-uat-reports.pages.dev/${org}/${repo}/pr-${pr}/${token}/latest.html`;
+    // Return report URL (directory listing shows all uploaded files)
+    const reportUrl = `https://visual-uat-reports.2389-research-inc.workers.dev/${org}/${repo}/pr-${pr}/${token}/`;
 
     return new Response(JSON.stringify({
       success: true,
