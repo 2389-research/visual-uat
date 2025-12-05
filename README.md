@@ -1,185 +1,197 @@
 # visual-uat
 
-Visual acceptance testing with LLM-powered test generation.
+Visual acceptance testing with LLM-powered evaluation. Compare screenshots between git branches and let Claude determine if changes are intentional or regressions.
 
-## Target Runner Examples
+## Overview
 
-Visual-uat works with any web server. Configure the `targetRunner` in your `visual-uat.config.js`:
+visual-uat automates visual regression testing by:
 
-### Node.js (npm)
-```javascript
-targetRunner: {
-  startCommand: 'npm start'
-}
+1. **Capturing screenshots** from your web app on two branches (base and current)
+2. **Intelligent diffing** that handles layout changes, insertions, and deletions
+3. **AI evaluation** using Claude to assess whether changes match developer intent
+4. **HTML reports** with side-by-side comparisons and confidence scores
+
+## Quick Start
+
+### Installation
+
+```bash
+npm install -g visual-uat
 ```
 
-### Static Files (npx serve)
-```javascript
-targetRunner: {
-  startCommand: 'npx serve -l $PORT tests/fixtures'
-}
-```
+### Setup
 
-### Python (http.server)
-```javascript
-targetRunner: {
-  startCommand: 'cd tests/fixtures && python -m http.server $PORT'
-}
-```
-
-### Go
-```javascript
-targetRunner: {
-  startCommand: 'go run main.go'
-}
-```
-
-### Elixir Phoenix
-```javascript
-targetRunner: {
-  startCommand: 'mix phx.server'
-}
-```
-
-For more examples, see [docs/examples/target-runners.md](docs/examples/target-runners.md)
-
-## Smart Image Diffing
-
-Visual-UAT uses intelligent image comparison that handles:
-
-- ✅ Different-sized images (no more dimension errors!)
-- ✅ Content insertions without false positives on shifted content
-- ✅ Content deletions with accurate change detection
-- ✅ Layout reordering with content-aware matching
-- ✅ Backward compatible with same-size image comparisons
-
-### How It Works
-
-Smart diffing uses a two-tier hybrid approach:
-
-1. **Tier 1: Adaptive Alignment (Fast Path)** - Row-by-row comparison with sliding window search for common cases
-2. **Tier 2: Feature-Based Matching (Fallback)** - Perceptual hashing and block matching for complex restructuring
-
-### Configuration
+1. Create `visual-uat.config.js` in your project root:
 
 ```javascript
-// visual-uat.config.js
 module.exports = {
+  baseBranch: 'main',
+  specsDir: './specs',
+  generatedDir: './tests/generated',
   plugins: {
-    differ: '@visual-uat/smart-differ', // Default
+    testGenerator: '@visual-uat/stub-generator',
+    targetRunner: '@visual-uat/web-runner',
+    differ: '@visual-uat/smart-differ',
+    evaluator: '@visual-uat/claude-evaluator'
   },
+  targetRunner: {
+    startCommand: 'npm start'
+  }
+};
+```
+
+2. Create a spec file in `specs/`:
+
+```markdown
+# Homepage
+
+## Story: User views the homepage
+As a visitor, I want to see the homepage so I can understand what the product offers.
+
+### Checkpoints
+- Initial load shows hero section
+- Navigation is visible
+- Footer contains links
+```
+
+3. Set your Anthropic API key:
+
+```bash
+echo "ANTHROPIC_API_KEY=sk-ant-..." > .env.local
+```
+
+4. Run tests:
+
+```bash
+visual-uat run --all
+```
+
+## Configuration
+
+### visual-uat.config.js Reference
+
+```javascript
+module.exports = {
+  // Git branch to compare against
+  baseBranch: 'main',
+
+  // Where spec files live
+  specsDir: './specs',
+
+  // Where generated Playwright tests go
+  generatedDir: './tests/generated',
+
+  // Plugin configuration
+  plugins: {
+    testGenerator: '@visual-uat/stub-generator',
+    targetRunner: '@visual-uat/web-runner',
+    differ: '@visual-uat/smart-differ',      // or '@visual-uat/quadtree-differ'
+    evaluator: '@visual-uat/claude-evaluator'
+  },
+
+  // How to start your dev server
+  targetRunner: {
+    startCommand: 'npm start'  // $PORT is replaced with actual port
+  },
+
+  // Smart differ settings
   smartDiffer: {
     adaptiveThreshold: 0.95,    // Similarity required for row match
     searchWindow: 50,           // ±N rows to search for alignment
     blockSize: 50,              // Rows per feature block
     fallbackThreshold: 3        // Misalignments before fallback
+  },
+
+  // LLM evaluator settings
+  evaluator: {
+    autoPassThreshold: 0.95,    // Auto-pass if confidence >= 95%
+    autoFailThreshold: 0.30     // Auto-fail if confidence <= 30%
   }
 };
 ```
 
-For more details, see [docs/smart-differ-guide.md](docs/smart-differ-guide.md)
+### Target Runner Examples
 
-## Dogfooding: Testing the HTML Reporter
+visual-uat works with any web server:
 
-Visual-uat tests its own HTML report structure to catch visual regressions.
+```javascript
+// Node.js
+targetRunner: { startCommand: 'npm start' }
 
-### Generate Fixture Report
-```bash
-npm run setup:dogfood
+// Static files
+targetRunner: { startCommand: 'npx serve -l $PORT ./dist' }
+
+// Python
+targetRunner: { startCommand: 'python -m http.server $PORT' }
+
+// Go
+targetRunner: { startCommand: 'go run main.go' }
+
+// Elixir Phoenix
+targetRunner: { startCommand: 'mix phx.server' }
 ```
 
-This runs visual-uat on the demo-app, generating an HTML report at `examples/demo-app/.visual-uat/reports/<timestamp>-<runId>.html`.
+The `$PORT` variable is expanded to the allocated port. The `PORT` environment variable is also set for servers that read from `process.env.PORT`.
 
-### Test Report Structure
-```bash
-npm run test:dogfood
-```
+### Port Configuration
 
-This serves the generated reports and captures screenshots to verify the HTML structure hasn't broken.
-
-### Use Case
-When modifying `src/plugins/html-reporter.ts`, run both commands to see visual diffs of your changes.
-
-## Port Configuration
-
-Visual-UAT runs two dev servers simultaneously (base branch and current branch) and automatically finds available ports.
-
-### Automatic Port Detection (Default)
+visual-uat runs two dev servers simultaneously and auto-detects available ports:
 
 ```bash
+# Automatic (default)
 visual-uat run --all
 # Output: Using dynamic ports: base=54102, current=54103
+
+# Manual
+visual-uat run --base-port 3000 --current-port 3001
 ```
 
-Ports are auto-detected using OS port allocation (bind to port 0), ensuring no conflicts with existing processes.
+## CLI Reference
 
-### Manual Port Specification
+### `visual-uat generate`
+
+Generate Playwright test scripts from spec files.
 
 ```bash
-# Specify both ports explicitly
-visual-uat run --base-port 3000 --current-port 3001
+visual-uat generate [options]
 
-# Specify one, auto-detect the other
-visual-uat run --base-port 3000
+Options:
+  --force     Regenerate all tests (ignore cache)
 ```
 
-### Using $PORT in startCommand
+### `visual-uat run`
 
-The `$PORT` variable is expanded in your `startCommand`:
+Execute visual acceptance tests.
 
-```javascript
-targetRunner: {
-  startCommand: 'npx serve . -l $PORT'  // $PORT replaced with actual port
-}
+```bash
+visual-uat run [options]
+
+Options:
+  --all                  Force run all tests (ignore change detection)
+  --base <branch>        Base branch to compare against
+  --fail-fast            Stop on first error
+  --keep-worktrees       Keep worktrees after execution for debugging
+  --quiet, -q            Minimal output
+  --verbose, -v          Detailed output
+  --no-html              Skip HTML report generation
+  --open, -o             Auto-open HTML report in browser
+  --base-port <port>     Port for baseline server
+  --current-port <port>  Port for current server
 ```
 
-The `PORT` environment variable is also set, so servers that read from `process.env.PORT` work automatically.
+### `visual-uat report`
 
-## LLM Evaluator
+View test results.
 
-Visual-UAT uses Claude to evaluate whether visual changes are intentional or regressions.
+```bash
+visual-uat report [runId]
 
-### How It Works
+Arguments:
+  runId       Specific run ID to view (default: latest)
 
-1. Screenshots are captured from both branches
-2. Smart diffing identifies visual differences
-3. Claude evaluates the changes against:
-   - **Test intent** (from your spec file)
-   - **Code changes** (git diff between branches)
-   - **Visual diff metrics** (percentage changed, regions affected)
-
-### Git Diff Context
-
-The evaluator receives context about what code changed between branches:
-
+Options:
+  --latest    Show latest run
 ```
-Commits:
-abc123 feat: add real images to cards
-def456 fix: adjust card spacing
-
-Changes: 3 files changed, 45 insertions(+), 12 deletions(-)
-
-Files changed:
- src/components/Card.tsx | 35 ++++++++++++++++++++++++++++++++---
- src/styles/cards.css    | 15 +++++++++++----
- public/images/card1.png | Bin 0 -> 24532 bytes
-```
-
-This helps the evaluator understand *why* visual changes occurred and whether they align with the developer's intent.
-
-### Configuration
-
-```javascript
-// visual-uat.config.js
-module.exports = {
-  evaluator: {
-    autoPassThreshold: 0.95,  // Auto-pass if confidence >= 95%
-    autoFailThreshold: 0.30   // Auto-fail if confidence <= 30%
-  }
-};
-```
-
-Changes between thresholds are flagged as "needs review" for human judgment.
 
 ## GitHub Action
 
@@ -206,6 +218,8 @@ jobs:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
+The action auto-detects the PR's target branch for comparison.
+
 ### Action Inputs
 
 | Input | Required | Default | Description |
@@ -227,7 +241,194 @@ jobs:
 
 ### Artifacts
 
-The action automatically uploads these artifacts:
+The action automatically uploads:
 - `visual-uat-report/reports/` - HTML reports
 - `visual-uat-report/diffs/` - Visual diff images
 - `visual-uat-report/screenshots/` - Captured screenshots
+
+## Architecture
+
+### Three-Tier Test Model
+
+```
+Stories (human-readable)
+    ↓ translate
+BDD Specs (structured scenarios)
+    ↓ generate
+Playwright Tests (executable)
+```
+
+1. **Stories** (`specs/*.md`) - Human-readable descriptions with checkpoints
+2. **BDD Specs** - Parsed structured scenarios (internal)
+3. **Tests** (`tests/generated/*.spec.ts`) - Playwright tests that capture screenshots
+
+### Plugin System
+
+visual-uat uses a plugin architecture for extensibility:
+
+| Plugin | Purpose | Built-in Options |
+|--------|---------|------------------|
+| `testGenerator` | Generate Playwright tests | `@visual-uat/stub-generator` |
+| `targetRunner` | Start/stop dev servers | `@visual-uat/web-runner` |
+| `differ` | Compare screenshots | `@visual-uat/smart-differ`, `@visual-uat/quadtree-differ` |
+| `evaluator` | Assess changes | `@visual-uat/claude-evaluator` |
+
+### Directory Structure
+
+```
+src/
+├── cli.ts              # CLI entry point
+├── orchestrator/       # Test execution coordination
+│   ├── handlers/       # State machine handlers
+│   └── services/       # Server management, test running
+├── plugins/            # Built-in plugins
+│   ├── smart-differ/   # Intelligent image comparison
+│   ├── quadtree-differ/# Spatial diff isolation
+│   ├── claude-evaluator/# LLM-powered evaluation
+│   └── html-reporter/  # Report generation
+├── translators/        # Story → BDD → Test conversion
+└── types/              # TypeScript interfaces
+```
+
+## Smart Image Diffing
+
+visual-uat uses intelligent image comparison that handles:
+
+- ✅ Different-sized images
+- ✅ Content insertions without false positives
+- ✅ Content deletions with accurate detection
+- ✅ Layout reordering with content-aware matching
+
+### How It Works
+
+Two-tier hybrid approach:
+
+1. **Adaptive Alignment (Fast)** - Row-by-row comparison with sliding window
+2. **Feature-Based Matching (Fallback)** - Perceptual hashing for complex restructuring
+
+### Diff Visualization
+
+- 🟠 **Safety Orange** - Modified regions
+- 🟢 **Green** - Added content
+- 🔴 **Red** - Deleted content
+
+## LLM Evaluator
+
+Claude evaluates whether visual changes are intentional:
+
+### Context Provided
+
+1. **Test intent** from your spec file
+2. **Code changes** (git diff between branches)
+3. **Visual diff metrics** (percentage changed, regions affected)
+
+### Git Diff Context
+
+The evaluator sees what code changed:
+
+```
+Commits:
+abc123 feat: add real images to cards
+
+Files changed:
+ src/components/Card.tsx | 35 ++++++++++++---
+```
+
+This helps determine if visual changes align with developer intent.
+
+### Confidence Thresholds
+
+- **≥ 95%** - Auto-pass (clearly intentional)
+- **≤ 30%** - Auto-fail (likely regression)
+- **Between** - Flagged for human review
+
+## Contributing
+
+### Development Setup
+
+```bash
+# Clone the repo
+git clone https://github.com/2389-research/visual-uat.git
+cd visual-uat
+
+# Install dependencies
+npm install
+
+# Build
+npm run build
+
+# Run tests
+npm test
+```
+
+### Running Tests
+
+```bash
+# All tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Specific file
+npm test -- src/plugins/smart-differ/smart-differ.test.ts
+```
+
+### Code Style
+
+- TypeScript with strict mode
+- All files start with 2-line `// ABOUTME:` comment
+- Tests colocated with source (`*.test.ts`)
+- Pre-commit hooks enforce formatting (Biome)
+
+### Pull Request Process
+
+1. Create a feature branch
+2. Write tests first (TDD)
+3. Implement the feature
+4. Ensure all tests pass: `npm test`
+5. Ensure build succeeds: `npm run build`
+6. Create PR with clear description
+
+## Troubleshooting
+
+### "ANTHROPIC_API_KEY is required"
+
+Set your API key in `.env.local`:
+
+```bash
+echo "ANTHROPIC_API_KEY=sk-ant-..." > .env.local
+```
+
+### "Port already in use"
+
+Use `--base-port` and `--current-port` to specify different ports, or let visual-uat auto-detect:
+
+```bash
+visual-uat run --all  # Auto-detects available ports
+```
+
+### Screenshots differ but shouldn't
+
+Check if your app has:
+- Animations (disable in test mode)
+- Dynamic content (mock dates/times)
+- Random elements (seed random generators)
+
+### Worktrees not cleaning up
+
+Use `--keep-worktrees` to preserve them for debugging:
+
+```bash
+visual-uat run --all --keep-worktrees
+```
+
+Worktrees are stored in `.worktrees/` (git-ignored).
+
+### Tests timing out
+
+Increase Playwright timeout in generated tests or check if your server starts slowly.
+
+## License
+
+MIT

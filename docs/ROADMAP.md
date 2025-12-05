@@ -8,5 +8,5 @@
 
 ## Up Next
 - [x] **GitHub Action** - Publish as a reusable GitHub Action for CI/CD integration
-- [ ] **Docs for contributors** - Documentation to help others contribute to the project
+- [x] **Docs for contributors** - Documentation to help others contribute to the project
 - [ ] **Blog post** - Write up explaining the tool and approach
