@@ -62,3 +62,18 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
+
+    - name: Install visual-uat
+      shell: bash
+      run: |
+        echo "Installing visual-uat..."
+        npm install -g visual-uat
+        echo "✓ visual-uat installed: $(visual-uat --version || echo 'version check not available')"
+
+    - name: Install Playwright browsers
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "Installing Playwright Chromium..."
+        npx playwright install --with-deps chromium
+        echo "✓ Playwright browsers installed"
