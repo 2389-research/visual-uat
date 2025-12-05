@@ -141,6 +141,12 @@ runs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
+        # Check if reports exist
+        if [ ! -d ".visual-uat/reports" ] || [ -z "$(find .visual-uat/reports -type f -name "*.html" 2>/dev/null)" ]; then
+          echo "No visual-uat reports found, skipping upload"
+          exit 0
+        fi
+
         # Upload reports to Cloudflare
         RESPONSE=$(curl -s -X POST https://visual-uat-reports.2389-research-inc.workers.dev/upload \
           -F "org=${{ github.repository_owner }}" \
