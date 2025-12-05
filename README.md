@@ -180,3 +180,54 @@ module.exports = {
 ```
 
 Changes between thresholds are flagged as "needs review" for human judgment.
+
+## GitHub Action
+
+Use visual-uat in your CI/CD pipeline:
+
+```yaml
+name: Visual UAT
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for branch comparison
+
+      - name: Run Visual UAT
+        uses: 2389-research/visual-uat@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+### Action Inputs
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `anthropic-api-key` | Yes | - | Anthropic API key for LLM evaluation |
+| `working-directory` | No | `.` | Directory containing visual-uat.config.js |
+| `node-version` | No | `20` | Node.js version to use |
+| `verbose` | No | `false` | Enable verbose output |
+| `fail-fast` | No | `false` | Stop on first test failure |
+| `base-branch` | No | - | Override base branch for comparison |
+| `extra-args` | No | - | Additional CLI arguments |
+
+### Action Outputs
+
+| Output | Description |
+|--------|-------------|
+| `result` | Test result: `passed`, `failed`, or `errored` |
+| `report-path` | Path to the HTML report |
+
+### Artifacts
+
+The action automatically uploads these artifacts:
+- `visual-uat-report/reports/` - HTML reports
+- `visual-uat-report/diffs/` - Visual diff images
+- `visual-uat-report/screenshots/` - Captured screenshots
