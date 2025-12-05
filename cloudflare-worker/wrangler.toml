@@ -1,0 +1,16 @@
+name = "visual-uat-reports"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+[[kv_namespaces]]
+binding = "REPORTS"
+id = "eacd09b63c5e4851ae323d820c99cc5d"
+
+[[kv_namespaces]]
+binding = "TOKENS"
+id = "631f030018254ff3b270f011b78ad58b"
+
+[env.production]
+routes = [
+  { pattern = "visual-uat-reports.pages.dev/*", zone_name = "pages.dev" }
+]
